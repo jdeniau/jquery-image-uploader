@@ -8,6 +8,7 @@ The plugin has a automatic "fallback" mode.
 
 USAGE
 -------
+```js
 $('#dropZone').uploader({
 	fileField: '#files',
 	url: 'ajaxUpload.php',
@@ -21,6 +22,7 @@ $('#dropZone').uploader({
 		console.log(data);
 	}
 });
+```
 
 
 
