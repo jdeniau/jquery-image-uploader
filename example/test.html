@@ -1,0 +1,33 @@
+<html>
+<head>
+    <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+    <script src="../src/jquery.uploader.js"></script>
+</head>
+<body>
+
+    <div id="dropZone" style="width: 800px; height: 100px; border: 1px solid red">
+        Drop images here...
+    </div>
+
+    Or classic upload here : <input id="files" type="file" />
+
+    <div id="thumbnails">
+    </div>
+
+    <script>
+    $('#dropZone').uploader({
+        fileField: '#files',
+        url: '/test/example/ajaxUpload.php',
+        showThumbnails: true,
+        thumbnails: {
+            div: $('#thumbnails'),
+            width: 200,
+            height: 100
+        },
+        afterUpload: function (data) {
+            console.log(data);
+        }
+    });
+    </script>
+</body>
+</html>

@@ -33,8 +33,11 @@ if(typeof jQuery !== undefined){
 				onUploadProgress: function(event) { return false; },
 				beforeUpload: function() { return true; },
 				afterUpload: function() { return false; },
-				error: function(msg) { return false; }
+				error: function(msg) { alert(msg); }
 			}, params);
+
+			canUpload = true;
+			uploadFileList = new Array();
 
 
 			// =============================== 
@@ -99,6 +102,7 @@ if(typeof jQuery !== undefined){
 			function onDrop(event) {
 				event.preventDefault();
 				event.stopPropagation();
+				console.log(event.originalEvent.dataTransfer.files);
 				addFiles(event.originalEvent.dataTransfer.files);
 
 				return options.onDrop();
@@ -128,6 +132,8 @@ if(typeof jQuery !== undefined){
 			 * @return void
 			 */
 			function uploadComplete(event) {
+				canUpload = true;
+				uploadNextFile();
 				return options.afterUpload(event.target.response);
 			}
 
@@ -137,6 +143,8 @@ if(typeof jQuery !== undefined){
 			 * @return void
 			 */
 			function uploadFailed() {
+				canUpload = true;
+				uploadNextFile();
 				return options.error('upload failed');
 			}
 
@@ -146,7 +154,37 @@ if(typeof jQuery !== undefined){
 			 * @return void
 			 */
 			function uploadCanceled() {
+				canUpload = true;
+				uploadNextFile();
 				return options.error('upload canceled');
+			}
+
+			/**
+			 * addUploadFile
+			 *
+			 * @param file $file
+			 * @access public
+			 * @return void
+			 */
+			function addUploadFile(file) {
+				uploadFileList.push(file);
+				uploadNextFile();
+			}
+
+			/**
+			 * uploadNextFile
+			 *
+			 * @access public
+			 * @return void
+			 */
+			function uploadNextFile() {
+				if (canUpload) {
+					canUpload = false;
+					if (uploadFileList.length > 0) {
+						file = uploadFileList.shift();
+						uploadFile(file);
+					}
+				}
 			}
 
 			/**
@@ -230,7 +268,11 @@ if(typeof jQuery !== undefined){
 								reader.readAsDataURL(files[i]);
 							}
 
-							uploadFile(files[i]);
+							try {
+								addUploadFile(files[i]);
+							} catch (e) {
+								uploadFailed();
+							}
 						}
 					}
 			   } else {
