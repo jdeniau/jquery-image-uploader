@@ -6,38 +6,19 @@
  */
 if(typeof jQuery !== undefined){
     (function($){
+        /**
+         * Main function
+         */
         $.fn.uploader = function(params){
             // =============================== 
             // Settings 
             // =============================== 
-            var options = $.extend({}, {
-                dropZone: $(this),
-                fileField: null,
-                url: null,
+            var options = $.extend({}, $.fn.uploader.defaults, params);
+            options.dropZone = $(this);
 
-                showThumbnails : false,
-                thumbnails : {
-                    div: null,
-                    width: null,
-                    height: null
-                },
-
-                maxFileSize: 0,
-                progressBar: null,
-                
-                onFilesSelected: function() { return false; },
-                onDragLeave: function() { return false; },
-                onDragEnter: function() { return false; },
-                onDragOver: function() { return false; },
-                onDrop: function() { return false; },
-                onUploadProgress: function(event) { return false; },
-                beforeUpload: function() { return true; },
-                afterUpload: function() { return false; },
-                error: function(msg) { alert(msg); }
-            }, params);
-
-            canUpload = true;
-            uploadFileList = new Array();
+            var canUpload = true;
+            var uploadFileList = new Array();
+            var currentThumbnail = null;
 
 
             // =============================== 
@@ -62,7 +43,7 @@ if(typeof jQuery !== undefined){
                 event.preventDefault();
                 event.stopPropagation();
                 //you can remove a style from the drop zone
-                return options.onDragLeave();
+                return options.onDragLeave.call();
             }
 
             /**
@@ -75,7 +56,7 @@ if(typeof jQuery !== undefined){
                 event.preventDefault();
                 event.stopPropagation();
                 //you can add a style to the drop zone
-                return options.onDragEnter();
+                return options.onDragEnter.call();
             }
 
             /**
@@ -90,7 +71,7 @@ if(typeof jQuery !== undefined){
                 event.originalEvent.dataTransfer.effectAllowed= "copy";
                 event.originalEvent.dataTransfer.dropEffect = "copy";
 
-                return options.onDragOver();
+                return options.onDragOver.call();
             }
 
             /**
@@ -102,15 +83,23 @@ if(typeof jQuery !== undefined){
             function onDrop(event) {
                 event.preventDefault();
                 event.stopPropagation();
-                console.log(event.originalEvent.dataTransfer.files);
+                debug(event.originalEvent.dataTransfer.files);
                 addFiles(event.originalEvent.dataTransfer.files);
 
-                return options.onDrop();
+                return options.onDrop.call();
             }
 
 
 
             var xhr = new XMLHttpRequest();
+
+            function uploadStarted(event) {
+                if (options.thumbnails) {
+                    currentThumbnail = options.thumbnails.div.find('[data-upload-status="waiting"]:first');
+                    currentThumbnail.attr('data-upload-status', 'uploading');
+                    currentThumbnail.append($('<div class="progress" />').append($('<div />')));
+                }
+            }
 
             /**
              * onUploadProgress 
@@ -120,10 +109,16 @@ if(typeof jQuery !== undefined){
              */
             function onUploadProgress(event) {
                 if (event.lengthComputable) {
-                    console.log(event.loaded + '/' + event.total);
+                    //debug(event.loaded + '/' + event.total);
+                    if (!currentThumbnail || currentThumbnail.length == 0) {
+                        uploadStarted();
+                        //currentThumbnail = options.thumbnails.div.find('[data-upload-status="uploading"]:first');
+                    }
+
+                    currentThumbnail.find('.progress > div').width(event.loaded * 100 / event.total + '%');
                 }
 
-                return options.onUploadProgress(event);
+                return options.onUploadProgress.call(event);
             }
 
             /**
@@ -133,8 +128,10 @@ if(typeof jQuery !== undefined){
              */
             function uploadComplete(event) {
                 canUpload = true;
+                currentThumbnail.find('.progress > div').width('100%');
+                currentThumbnail = null;
                 uploadNextFile();
-                return options.afterUpload(event.target.response);
+                return options.afterUpload.call(event.target.response);
             }
 
             /**
@@ -144,8 +141,9 @@ if(typeof jQuery !== undefined){
              */
             function uploadFailed() {
                 canUpload = true;
+                currentThumbnail = null;
                 uploadNextFile();
-                return options.error('upload failed');
+                return options.error.call('upload failed');
             }
 
             /**
@@ -155,8 +153,9 @@ if(typeof jQuery !== undefined){
              */
             function uploadCanceled() {
                 canUpload = true;
+                currentThumbnail = null;
                 uploadNextFile();
-                return options.error('upload canceled');
+                return options.error.call('upload canceled');
             }
 
             /**
@@ -179,9 +178,9 @@ if(typeof jQuery !== undefined){
              */
             function uploadNextFile() {
                 if (canUpload) {
-                    canUpload = false;
                     if (uploadFileList.length > 0) {
                         file = uploadFileList.shift();
+                        canUpload = false;
                         uploadFile(file);
                     }
                 }
@@ -195,7 +194,7 @@ if(typeof jQuery !== undefined){
              */
             function uploadFile(file) {
                 //on s'abonne à l'événement progress pour savoir où en est l'upload
-                if (xhr.upload && options.beforeUpload()) {
+                if (xhr.upload && options.beforeUpload.call()) {
                     xhr.open("POST", options.url, true);
 
                     // on s'abonne à tout changement de statut pour détecter
@@ -204,6 +203,7 @@ if(typeof jQuery !== undefined){
 
                     /* event listners */
                     xhr.upload.addEventListener('progress',  onUploadProgress, false);
+                    xhr.addEventListener("loadstart", uploadStarted, false);
                     xhr.addEventListener("load", uploadComplete, false);
                     xhr.addEventListener("error", uploadFailed, false);
                     xhr.addEventListener("abort", uploadCanceled, false);
@@ -229,7 +229,7 @@ if(typeof jQuery !== undefined){
                 event.stopPropagation();
                 addFiles(event.target.files);
 
-                return options.onFilesSelected();
+                return options.onFilesSelected.call();
             }
 
             /**
@@ -246,23 +246,30 @@ if(typeof jQuery !== undefined){
                     var img = null;
                     var reader = null;
 
-                    var dropZoneElement = options.dropZone;
                     for (var i=0; i < files.length; i++) {
                         if (options.maxFileSize > 0 && file.size > options.maxFileSize) {
-                            return options.error('file too big');
+                            return options.error.call('the file you are trying to upload is too big');
                         } else {
                             if (options.showThumbnails == true) {
+                                var name = files[i].name;
                                 reader = new FileReader();
                                 reader.onloadend = function (evt) {
                                     var thumb = new Image();
                                     thumb.src = evt.target.result;
+                                    //thumb.id = name;
                                     if (options.thumbnails.width > 0) {
                                         thumb.width = options.thumbnails.width;
                                     }
                                     if (options.thumbnails.height > 0) {
                                         thumb.height = options.thumbnails.height;
                                     }
-                                    options.thumbnails.div.append(thumb);
+                                    $(thumb).hide();
+                                    options.thumbnails.div.append(
+                                        $('<div />')
+                                            .attr('data-upload-status', 'waiting')
+                                            .append(thumb)
+                                    );
+                                    $(thumb).show('slow');
 
                                  };
                                 reader.readAsDataURL(files[i]);
@@ -300,12 +307,15 @@ if(typeof jQuery !== undefined){
                     }
 
                     if (typeof options.thumbnails == 'object' && options.thumbnails.div == undefined) {
-                        options.thumbnails = { div: options.thumbnails, width: null, height: null };
+                        options.thumbnails.div = null;
                     }
 
                     if (options.thumbnails.div == null) {
                         options.thumbnails.div = $('<div class="fileUploadThumbnails" />');
+                    debug(options.dropZone);
                         options.dropZone.after(options.thumbnails.div);
+                        debug(options.thumbnails.div);
+                        debug(options.dropZone);
                     }
                 }
             }
@@ -333,5 +343,39 @@ if(typeof jQuery !== undefined){
 
             return this;
         };
+
+        $.fn.uploader.defaults = {
+            fileField: null,
+            url: null,
+
+            showThumbnails : false,
+            thumbnails : {
+                div: null,
+                width: null,
+                height: null
+            },
+
+            maxFileSize: 0,
+            progressBar: null,
+            
+            onFilesSelected: function() { return false; },
+            onDragLeave: function() { return false; },
+            onDragEnter: function() { return false; },
+            onDragOver: function() { return false; },
+            onDrop: function() { return false; },
+            onUploadProgress: function(event) { return false; },
+            beforeUpload: function() { return true; },
+            afterUpload: function() { return false; },
+            error: function(msg) { alert(msg); },
+
+            debug: true
+        };
+
+        function debug(i) {
+            if (window.console && window.console.log && $.fn.uploader.defaults.debug == true) {
+                console.log(i);
+            }
+        }
+
     })(jQuery);
 }
