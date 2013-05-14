@@ -1,5 +1,5 @@
 {
-  "name": "jquery.image-uploader",
+  "name": "jquery-image-uploader",
   "version": "0.0.1",
   "main": "src/jqueryUploader.js",
   "ignore": [
