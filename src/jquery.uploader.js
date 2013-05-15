@@ -18,6 +18,7 @@ if(typeof jQuery !== undefined){
 
             var canUpload = true;
             var uploadFileList = new Array();
+            var allUploadedFileList = new Array();
             var currentThumbnail = null;
 
 
@@ -30,7 +31,7 @@ if(typeof jQuery !== undefined){
              * @return void
              */
             function fileApiSupported() {
-                return (window.File && window.FileReader && window.FileList);
+                return (window.File && window.FileReader && window.FileList && window.FormData);
             }
 
             /**
@@ -43,7 +44,7 @@ if(typeof jQuery !== undefined){
                 event.preventDefault();
                 event.stopPropagation();
                 //you can remove a style from the drop zone
-                return options.onDragLeave.call();
+                return options.onDragLeave();
             }
 
             /**
@@ -56,7 +57,7 @@ if(typeof jQuery !== undefined){
                 event.preventDefault();
                 event.stopPropagation();
                 //you can add a style to the drop zone
-                return options.onDragEnter.call();
+                return options.onDragEnter();
             }
 
             /**
@@ -71,7 +72,7 @@ if(typeof jQuery !== undefined){
                 event.originalEvent.dataTransfer.effectAllowed= "copy";
                 event.originalEvent.dataTransfer.dropEffect = "copy";
 
-                return options.onDragOver.call();
+                return options.onDragOver();
             }
 
             /**
@@ -86,7 +87,7 @@ if(typeof jQuery !== undefined){
                 debug(event.originalEvent.dataTransfer.files);
                 addFiles(event.originalEvent.dataTransfer.files);
 
-                return options.onDrop.call();
+                return options.onDrop();
             }
 
 
@@ -118,7 +119,7 @@ if(typeof jQuery !== undefined){
                     currentThumbnail.find('.progress > div').width(event.loaded * 100 / event.total + '%');
                 }
 
-                return options.onUploadProgress.call(event);
+                return options.onUploadProgress(event);
             }
 
             /**
@@ -131,7 +132,7 @@ if(typeof jQuery !== undefined){
                 currentThumbnail.find('.progress > div').width('100%');
                 currentThumbnail = null;
                 uploadNextFile();
-                return options.afterUpload.call(event.target.response);
+                return options.afterUpload(event.target.response);
             }
 
             /**
@@ -143,7 +144,7 @@ if(typeof jQuery !== undefined){
                 canUpload = true;
                 currentThumbnail = null;
                 uploadNextFile();
-                return options.error.call('upload failed');
+                return options.error('upload failed');
             }
 
             /**
@@ -155,7 +156,7 @@ if(typeof jQuery !== undefined){
                 canUpload = true;
                 currentThumbnail = null;
                 uploadNextFile();
-                return options.error.call('upload canceled');
+                return options.error('upload canceled');
             }
 
             /**
@@ -166,8 +167,28 @@ if(typeof jQuery !== undefined){
              * @return void
              */
             function addUploadFile(file) {
+                allUploadedFileList.push(file);
+                debug(allUploadedFileList);
                 uploadFileList.push(file);
                 uploadNextFile();
+            }
+
+            /**
+             * fileAlreadyUploaded
+             *
+             * @param file $file
+             * @access public
+             * @return boolean
+             */
+            function fileAlreadyUploaded(file) {
+                for (i in allUploadedFileList) {
+                    f = allUploadedFileList[i];
+                    console.log()
+                    if (file.name == f.name && file.size == f.size && file.type == f.type) {
+                        return true;
+                    }
+                }
+                return false;
             }
 
             /**
@@ -194,8 +215,11 @@ if(typeof jQuery !== undefined){
              */
             function uploadFile(file) {
                 //on s'abonne à l'événement progress pour savoir où en est l'upload
-                if (xhr.upload && options.beforeUpload.call()) {
-                    xhr.open("POST", options.url, true);
+                if (xhr.upload && options.beforeUpload()) {
+                    var fd = new FormData();
+                    fd.append('file', file);
+
+                    xhr.open("POST", options.url);
 
                     // on s'abonne à tout changement de statut pour détecter
                     // une erreur, ou la fin de l'upload
@@ -208,13 +232,13 @@ if(typeof jQuery !== undefined){
                     xhr.addEventListener("error", uploadFailed, false);
                     xhr.addEventListener("abort", uploadCanceled, false);
 
-                    xhr.setRequestHeader("Content-Type", "multipart/form-data");
+                    //xhr.setRequestHeader("Content-Type", "multipart/form-data");
                     xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-                    xhr.setRequestHeader("X-File-Name", file.name);
-                    xhr.setRequestHeader("X-File-Size", file.size);
-                    xhr.setRequestHeader("X-File-Type", file.type);
+                    //xhr.setRequestHeader("X-File-Name", file.name);
+                    //xhr.setRequestHeader("X-File-Size", file.size);
+                    //xhr.setRequestHeader("X-File-Type", file.type);
                 
-                    xhr.send(file);
+                    xhr.send(fd);
                 }
             }
 
@@ -229,7 +253,7 @@ if(typeof jQuery !== undefined){
                 event.stopPropagation();
                 addFiles(event.target.files);
 
-                return options.onFilesSelected.call();
+                return options.onFilesSelected();
             }
 
             /**
@@ -248,7 +272,9 @@ if(typeof jQuery !== undefined){
 
                     for (var i=0; i < files.length; i++) {
                         if (options.maxFileSize > 0 && file.size > options.maxFileSize) {
-                            return options.error.call('the file you are trying to upload is too big');
+                            return options.error('the file you are trying to upload is too big');
+                        } else if (!options.allowDuplicate && fileAlreadyUploaded(files[i])) {
+                            return options.error('the file you are trying to upload has already been sent');
                         } else {
                             if (options.showThumbnails == true) {
                                 var name = files[i].name;
@@ -312,10 +338,7 @@ if(typeof jQuery !== undefined){
 
                     if (options.thumbnails.div == null) {
                         options.thumbnails.div = $('<div class="fileUploadThumbnails" />');
-                    debug(options.dropZone);
                         options.dropZone.after(options.thumbnails.div);
-                        debug(options.thumbnails.div);
-                        debug(options.dropZone);
                     }
                 }
             }
@@ -356,7 +379,8 @@ if(typeof jQuery !== undefined){
             },
 
             maxFileSize: 0,
-            progressBar: null,
+            allowDuplicate: false,
+            //progressBar: null,
             
             onFilesSelected: function() { return false; },
             onDragLeave: function() { return false; },
@@ -368,7 +392,7 @@ if(typeof jQuery !== undefined){
             afterUpload: function() { return false; },
             error: function(msg) { alert(msg); },
 
-            debug: true
+            debug: false
         };
 
         function debug(i) {
