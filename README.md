@@ -5,6 +5,13 @@ jquery-image-uploader is a jquery plugin to upload file.
 It supports drap&drop and file API.
 The plugin has a automatic "fallback" mode.
 
+This plugin is not really production-ready.
+
+## Installation
+```sh
+bower install jquery-image-uploader
+```
+Or copy the ```src/jquery-image-uploader.min.js``` file on your server.
 
 ## Usage
 ### Basic usage
