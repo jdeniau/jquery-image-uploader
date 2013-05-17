@@ -2,8 +2,9 @@
  * Uploader (for jQuery)
  * version: 1.0 (29/01/2012)
  * @requires jQuery v1.4.0 or later
- * @copyright 2012 Julien DENIAU
+ * @author Julien DENIAU
  */
+
 if(typeof jQuery !== undefined){
     (function($){
         /**
@@ -50,7 +51,7 @@ if(typeof jQuery !== undefined){
             /**
              * onDragEnter 
              * 
-             * @param event $event 
+             * @param {Event} event 
              * @return void
              */
             function onDragEnter(event) {
@@ -69,8 +70,8 @@ if(typeof jQuery !== undefined){
             function onDragOver(event) {
                 event.preventDefault();
                 event.stopPropagation();
-                event.originalEvent.dataTransfer.effectAllowed= "copy";
-                event.originalEvent.dataTransfer.dropEffect = "copy";
+                //event.originalEvent.dataTransfer.effectAllowed= "copy";
+                //event.originalEvent.dataTransfer.dropEffect = "copy";
 
                 return options.onDragOver();
             }
@@ -84,7 +85,6 @@ if(typeof jQuery !== undefined){
             function onDrop(event) {
                 event.preventDefault();
                 event.stopPropagation();
-                debug(event.originalEvent.dataTransfer.files);
                 addFiles(event.originalEvent.dataTransfer.files);
 
                 return options.onDrop();
@@ -110,13 +110,14 @@ if(typeof jQuery !== undefined){
              */
             function onUploadProgress(event) {
                 if (event.lengthComputable) {
-                    //debug(event.loaded + '/' + event.total);
                     if (!currentThumbnail || currentThumbnail.length == 0) {
                         uploadStarted();
                         //currentThumbnail = options.thumbnails.div.find('[data-upload-status="uploading"]:first');
                     }
 
-                    currentThumbnail.find('.progress > div').width(event.loaded * 100 / event.total + '%');
+                    if (currentThumbnail) {
+                        currentThumbnail.find('.progress > div').width(event.loaded * 100 / event.total + '%');
+                    }
                 }
 
                 return options.onUploadProgress(event);
@@ -129,10 +130,12 @@ if(typeof jQuery !== undefined){
              */
             function uploadComplete(event) {
                 canUpload = true;
-                currentThumbnail.find('.progress > div').width('100%');
-                currentThumbnail = null;
+                if (currentThumbnail) {
+                    currentThumbnail.find('.progress > div').width('100%');
+                    currentThumbnail = null;
+                }
+                options.afterUpload(event.target.response);
                 uploadNextFile();
-                return options.afterUpload(event.target.response);
             }
 
             /**
@@ -143,8 +146,8 @@ if(typeof jQuery !== undefined){
             function uploadFailed() {
                 canUpload = true;
                 currentThumbnail = null;
+                options.error('upload failed');
                 uploadNextFile();
-                return options.error('upload failed');
             }
 
             /**
@@ -155,8 +158,8 @@ if(typeof jQuery !== undefined){
             function uploadCanceled() {
                 canUpload = true;
                 currentThumbnail = null;
+                options.error('upload canceled');
                 uploadNextFile();
-                return options.error('upload canceled');
             }
 
             /**
@@ -168,7 +171,6 @@ if(typeof jQuery !== undefined){
              */
             function addUploadFile(file) {
                 allUploadedFileList.push(file);
-                debug(allUploadedFileList);
                 uploadFileList.push(file);
                 uploadNextFile();
             }
@@ -183,7 +185,6 @@ if(typeof jQuery !== undefined){
             function fileAlreadyUploaded(file) {
                 for (i in allUploadedFileList) {
                     f = allUploadedFileList[i];
-                    console.log()
                     if (file.name == f.name && file.size == f.size && file.type == f.type) {
                         return true;
                     }
@@ -198,12 +199,10 @@ if(typeof jQuery !== undefined){
              * @return void
              */
             function uploadNextFile() {
-                if (canUpload) {
-                    if (uploadFileList.length > 0) {
-                        file = uploadFileList.shift();
-                        canUpload = false;
-                        uploadFile(file);
-                    }
+                if (canUpload && uploadFileList.length > 0) {
+                    file = uploadFileList.shift();
+                    canUpload = false;
+                    uploadFile(file);
                 }
             }
 
@@ -264,10 +263,6 @@ if(typeof jQuery !== undefined){
              */
             function addFiles(files) {
                 if (fileApiSupported()) {
-                    // preparing thumbnails div
-                    prepareThumbnails();
-
-                    var img = null;
                     var reader = null;
 
                     for (var i=0; i < files.length; i++) {
@@ -276,27 +271,11 @@ if(typeof jQuery !== undefined){
                         } else if (!options.allowDuplicate && fileAlreadyUploaded(files[i])) {
                             return options.error('the file you are trying to upload has already been sent');
                         } else {
-                            if (options.showThumbnails == true) {
+                            if (options.thumbnails) {
                                 var name = files[i].name;
                                 reader = new FileReader();
-                                reader.onloadend = function (evt) {
-                                    var thumb = new Image();
-                                    thumb.src = evt.target.result;
-                                    //thumb.id = name;
-                                    if (options.thumbnails.width > 0) {
-                                        thumb.width = options.thumbnails.width;
-                                    }
-                                    if (options.thumbnails.height > 0) {
-                                        thumb.height = options.thumbnails.height;
-                                    }
-                                    $(thumb).hide();
-                                    options.thumbnails.div.append(
-                                        $('<div />')
-                                            .attr('data-upload-status', 'waiting')
-                                            .append(thumb)
-                                    );
-                                    $(thumb).show('slow');
-
+                                reader.onload = function (evt) {
+                                    displayImage(evt.target.result);
                                  };
                                 reader.readAsDataURL(files[i]);
                             }
@@ -311,6 +290,67 @@ if(typeof jQuery !== undefined){
                } else {
                    alert('files api not supported');
                }
+            }
+
+            function displayImage(src) {
+                var thumb = new Image();
+                thumb.src = src;
+                //thumb.id = name;
+                $(thumb).hide();
+                var thumbContainer = $('<div />')
+                    .attr('data-upload-status', 'waiting')
+                    .css({'overflow': 'hidden', 'position': 'relative'})
+                    .append(thumb);
+                thumb.onload = function() {
+                    var otw = options.thumbnails.width;
+                    var oth = options.thumbnails.height;
+                    var ratio = thumb.width / thumb.height;
+
+                    if (options.thumbnails.crop && otw > 0 && oth > 0) {
+                        thumbContainer.width(otw);
+                        thumbContainer.height(oth);
+                        $(thumb).css('position', 'absolute');
+                        var wantedRatio = otw / oth;
+
+                        if (wantedRatio > ratio) {
+                            // portrait image
+                            if (options.thumbnails.crop == 'zoom') {
+                                thumb.width = otw;
+                                thumb.height = otw / ratio;
+                                $(thumb).css('top', '-' + parseInt((thumb.height - oth) / 2) + 'px');
+                            } else {
+                                thumb.width = oth * ratio;
+                                thumb.height = oth;
+                                $(thumb).css('left', parseInt((otw - thumb.width) / 2) + 'px');
+                            }
+                        } else {
+                            if (options.thumbnails.crop == 'zoom') {
+                                thumb.height = oth;
+                                thumb.width = oth * ratio;
+                                $(thumb).css('left', '-' + parseInt((thumb.width - otw) / 2) + 'px');
+                            } else {
+                                thumb.width = otw;
+                                thumb.height = oth / ratio;
+                                $(thumb).css('top', parseInt((oth - thumb.height) / 2) + 'px');
+                            }
+                        }
+                    } else {
+                        if (otw > 0) {
+                            thumb.width = otw;
+                        } else if (oth > 0) {
+                            thumb.width = oth * ratio;
+                        }
+
+                        if (oth > 0) {
+                            thumb.height = oth;
+                        } else if (otw > 0) {
+                            thumb.height = otw / ratio;
+                        }
+                    }
+
+                    $(thumb).show('slow');
+                }
+                options.thumbnails.div.append(thumbContainer);
             }
 
             /**
@@ -358,21 +398,33 @@ if(typeof jQuery !== undefined){
             }
 
             if (options.fileField != null) {
+                // open fileField on click on the dropZone
+                options.dropZone.on('click', function() {
+                    options.fileField.trigger('click');
+                });
+
                 if (typeof options.fileField == 'string') {
                     options.fileField = $(options.fileField);
                 }
                 options.fileField.on('change', onFilesSelected);
+                if (options.hideFileField == true) {
+                    options.fileField.hide();
+                }
             }
+
+            // preparing thumbnails div
+            prepareThumbnails();
 
             return this;
         };
 
         $.fn.uploader.defaults = {
             fileField: null,
+            hideFileField: true,
+
             url: null,
 
-            showThumbnails : false,
-            thumbnails : {
+            thumbnails: {
                 div: null,
                 width: null,
                 height: null

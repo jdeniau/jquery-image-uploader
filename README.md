@@ -1,52 +1,52 @@
-jqueryUploader
+jquery-image-uploader
 =========
 
-jquerUploader is a jquery plugin to upload file. 
+jquery-image-uploader is a jquery plugin to upload file. 
 It supports drap&drop and file API.
 The plugin has a automatic "fallback" mode.
 
 
-USAGE
--------
+## Usage
+### Basic usage
 ```js
 $('#dropZone').uploader({
 	fileField: '#files',
 	url: 'ajaxUpload.php',
-	showThumbnails: true,
-	thumbnails: {
-		div: $('#thumbnails'),
-		width: 500,
-		height: 300
-	},
 	afterUpload: function (data) {
 		console.log(data);
-	}
+	}, 
+    error: function(msg) {
+        alert(msg);
+    }
 });
 ```
 
+### Possible options (with default values)
+```js
+$('#dropZone').uploader({
+	fileField: null, // the "simple" file input
+    hideFileField: true, // hide the file field to show only the drop zone
+	url: 'ajaxUpload.php', // the url called for ajax upload
 
+	thumbnails: { // thumbnails options. Set to "false" to hide thumbnails
+		div: null, // thumbnails div (ex: "$('#thumbnailsDiv')"), do not set to generate it
+		width: null, // thumbnail width, null = image width
+		height: null, // thumbnail height, null = image height
+        crop: null // null|zoom|fit : null does not crop the image, zoom or fit crop if "width" and "height" are set
+	},
 
-LICENSE
--------
+    maxFileSize: 0, // an error is thrown if the file is bigger than max. 0 means no validation
+    allowDuplicate: false, // set to true to allow multiple upload of a file
 
-(The MIT License)
-
-Copyright (c) 2012-* Julien Deniau <julien.deniau@gmail.com>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-of the Software, and to permit persons to whom the Software is furnished to do
-so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+    // all callbacks. The most importants are 'afterUpload' and 'error'
+    onFilesSelected: function() { return false; },
+    onDragLeave: function() { return false; },
+    onDragEnter: function() { return false; },
+    onDragOver: function() { return false; },
+    onDrop: function() { return false; },
+    onUploadProgress: function(event) { return false; },
+    beforeUpload: function() { return true; },
+    afterUpload: function() { return false; },
+    error: function(msg) { alert(msg); },
+});
+```
