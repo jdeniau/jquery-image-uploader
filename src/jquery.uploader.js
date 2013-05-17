@@ -1,5 +1,5 @@
 /**
- * Uploader (for jQuery)
+ * ImageUploader (for jQuery)
  * version: 1.0 (29/01/2012)
  * @requires jQuery v1.4.0 or later
  * @author Julien DENIAU
@@ -10,11 +10,11 @@ if(typeof jQuery !== undefined){
         /**
          * Main function
          */
-        $.fn.uploader = function(params){
+        $.fn.imageUploader = function(params){
             // =============================== 
             // Settings 
             // =============================== 
-            var options = $.extend({}, $.fn.uploader.defaults, params);
+            var options = $.extend({}, $.fn.imageUploader.defaults, params);
             options.dropZone = $(this);
 
             var canUpload = true;
@@ -418,7 +418,7 @@ if(typeof jQuery !== undefined){
             return this;
         };
 
-        $.fn.uploader.defaults = {
+        $.fn.imageUploader.defaults = {
             fileField: null,
             hideFileField: true,
 
@@ -448,7 +448,7 @@ if(typeof jQuery !== undefined){
         };
 
         function debug(i) {
-            if (window.console && window.console.log && $.fn.uploader.defaults.debug == true) {
+            if (window.console && window.console.log && $.fn.imageUploader.defaults.debug == true) {
                 console.log(i);
             }
         }

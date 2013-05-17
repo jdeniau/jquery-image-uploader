@@ -9,7 +9,7 @@ The plugin has a automatic "fallback" mode.
 ## Usage
 ### Basic usage
 ```js
-$('#dropZone').uploader({
+$('#dropZone').imageUploader({
 	fileField: '#files',
 	url: 'ajaxUpload.php',
 	afterUpload: function (data) {
@@ -23,7 +23,7 @@ $('#dropZone').uploader({
 
 ### Possible options (with default values)
 ```js
-$('#dropZone').uploader({
+$('#dropZone').imageUploader({
 	fileField: null, // the "simple" file input
     hideFileField: true, // hide the file field to show only the drop zone
 	url: 'ajaxUpload.php', // the url called for ajax upload
