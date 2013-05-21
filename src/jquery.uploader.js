@@ -11,9 +11,9 @@ if(typeof jQuery !== undefined){
          * Main function
          */
         $.fn.imageUploader = function(params){
-            // =============================== 
-            // Settings 
-            // =============================== 
+            // ===============================
+            // Settings
+            // ===============================
             var options = $.extend({}, $.fn.imageUploader.defaults, params);
             options.dropZone = $(this);
 
@@ -23,12 +23,12 @@ if(typeof jQuery !== undefined){
             var currentThumbnail = null;
 
 
-            // =============================== 
+            // ===============================
             // Internal functions
-            // =============================== 
+            // ===============================
             /**
              * fileApiSupported check if the file api is supported
-             * 
+             *
              * @return void
              */
             function fileApiSupported() {
@@ -36,9 +36,9 @@ if(typeof jQuery !== undefined){
             }
 
             /**
-             * onDragLeave 
-             * 
-             * @param event $event 
+             * onDragLeave
+             *
+             * @param event $event
              * @return void
              */
             function onDragLeave(event) {
@@ -49,9 +49,9 @@ if(typeof jQuery !== undefined){
             }
 
             /**
-             * onDragEnter 
-             * 
-             * @param {Event} event 
+             * onDragEnter
+             *
+             * @param {Event} event
              * @return void
              */
             function onDragEnter(event) {
@@ -62,9 +62,9 @@ if(typeof jQuery !== undefined){
             }
 
             /**
-             * onDragOver 
-             * 
-             * @param event $event 
+             * onDragOver
+             *
+             * @param event $event
              * @return void
              */
             function onDragOver(event) {
@@ -77,9 +77,9 @@ if(typeof jQuery !== undefined){
             }
 
             /**
-             * onDrop 
-             * 
-             * @param event $event 
+             * onDrop
+             *
+             * @param event $event
              * @return void
              */
             function onDrop(event) {
@@ -103,9 +103,9 @@ if(typeof jQuery !== undefined){
             }
 
             /**
-             * onUploadProgress 
-             * 
-             * @param event $event 
+             * onUploadProgress
+             *
+             * @param event $event
              * @return void
              */
             function onUploadProgress(event) {
@@ -124,23 +124,24 @@ if(typeof jQuery !== undefined){
             }
 
             /**
-             * uploadComplete 
-             * 
+             * uploadComplete
+             *
              * @return void
              */
             function uploadComplete(event) {
                 canUpload = true;
                 if (currentThumbnail) {
                     currentThumbnail.find('.progress > div').width('100%');
+                    var thumbnailToReturn = currentThumbnail;
                     currentThumbnail = null;
                 }
-                options.afterUpload(event.target.response);
+                options.afterUpload(event.target.response, thumbnailToReturn);
                 uploadNextFile();
             }
 
             /**
-             * uploadFailed 
-             * 
+             * uploadFailed
+             *
              * @return void
              */
             function uploadFailed() {
@@ -151,8 +152,8 @@ if(typeof jQuery !== undefined){
             }
 
             /**
-             * uploadCanceled 
-             * 
+             * uploadCanceled
+             *
              * @return void
              */
             function uploadCanceled() {
@@ -208,8 +209,8 @@ if(typeof jQuery !== undefined){
 
             /**
              * uploadFile upload the file
-             * 
-             * @param file $file 
+             *
+             * @param file $file
              * @return void
              */
             function uploadFile(file) {
@@ -222,7 +223,7 @@ if(typeof jQuery !== undefined){
 
                     // on s'abonne à tout changement de statut pour détecter
                     // une erreur, ou la fin de l'upload
-                    //xhr.onreadystatechange = onStateChange; 
+                    //xhr.onreadystatechange = onStateChange;
 
                     /* event listners */
                     xhr.upload.addEventListener('progress',  onUploadProgress, false);
@@ -236,15 +237,15 @@ if(typeof jQuery !== undefined){
                     //xhr.setRequestHeader("X-File-Name", file.name);
                     //xhr.setRequestHeader("X-File-Size", file.size);
                     //xhr.setRequestHeader("X-File-Type", file.type);
-                
+
                     xhr.send(fd);
                 }
             }
 
             /**
-             * onFilesSelected 
-             * 
-             * @param event $event 
+             * onFilesSelected
+             *
+             * @param event $event
              * @return void
              */
             function onFilesSelected(event) {
@@ -257,8 +258,8 @@ if(typeof jQuery !== undefined){
 
             /**
              * addFiles add files to the file list
-             * 
-             * @param files $files 
+             *
+             * @param files $files
              * @return void
              */
             function addFiles(files) {
@@ -273,6 +274,7 @@ if(typeof jQuery !== undefined){
                         } else {
                             if (options.thumbnails) {
                                 var name = files[i].name;
+                                options.thumbnails.div.file = files[i];
                                 reader = new FileReader();
                                 reader.onload = function (evt) {
                                     displayImage(evt.target.result);
@@ -347,6 +349,7 @@ if(typeof jQuery !== undefined){
                             thumb.height = otw / ratio;
                         }
                     }
+                    $(thumb).css({ width: thumb.width, height : thumb.height });
 
                     $(thumb).show('slow');
                 }
@@ -355,7 +358,7 @@ if(typeof jQuery !== undefined){
 
             /**
              * prepare thumbnails div
-             * 
+             *
              * @return void
              */
             function prepareThumbnails() {
@@ -385,9 +388,9 @@ if(typeof jQuery !== undefined){
 
 
 
-            // =============================== 
+            // ===============================
             // main process
-            // =============================== 
+            // ===============================
 
             // Dropzone management
             if (options.dropZone != null) {
@@ -399,7 +402,7 @@ if(typeof jQuery !== undefined){
 
             if (options.fileField != null) {
                 // open fileField on click on the dropZone
-                options.dropZone.on('click', function() {
+                options.dropZone.on('click', function(event) {
                     options.fileField.trigger('click');
                 });
 
@@ -433,7 +436,7 @@ if(typeof jQuery !== undefined){
             maxFileSize: 0,
             allowDuplicate: false,
             //progressBar: null,
-            
+
             onFilesSelected: function() { return false; },
             onDragLeave: function() { return false; },
             onDragEnter: function() { return false; },
