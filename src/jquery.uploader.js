@@ -130,9 +130,10 @@ if(typeof jQuery !== undefined){
              */
             function uploadComplete(event) {
                 canUpload = true;
+                var thumbnailToReturn = null;
                 if (currentThumbnail) {
                     currentThumbnail.find('.progress > div').width('100%');
-                    var thumbnailToReturn = currentThumbnail;
+                    thumbnailToReturn = currentThumbnail;
                     currentThumbnail = null;
                 }
                 options.afterUpload(event.target.response, thumbnailToReturn);
@@ -402,7 +403,7 @@ if(typeof jQuery !== undefined){
 
             if (options.fileField != null) {
                 // open fileField on click on the dropZone
-                options.dropZone.on('click', function(event) {
+                options.dropZone.on('click', function() {
                     options.fileField.trigger('click');
                 });
 
