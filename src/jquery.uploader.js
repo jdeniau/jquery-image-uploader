@@ -42,10 +42,10 @@ if(typeof jQuery !== undefined){
              * @return void
              */
             function onDragLeave(event) {
-                event.preventDefault();
-                event.stopPropagation();
-                //you can remove a style from the drop zone
-                return options.onDragLeave();
+                if ($(event.target)[0] === options.dropZone[0]) {
+                    //you can remove a style from the drop zone
+                    return options.onDragLeave(event);
+                }
             }
 
             /**
@@ -55,10 +55,34 @@ if(typeof jQuery !== undefined){
              * @return void
              */
             function onDragEnter(event) {
+                if ($(event.target)[0] === options.dropZone[0]) {
+                    //you can add a style to the drop zone
+                    return options.onDragEnter(event);
+                }
+            }
+
+            /**
+             * onDragStart
+             *
+             * @param {Event} event
+             * @return void
+             */
+            function onDragStart(event) {
                 event.preventDefault();
                 event.stopPropagation();
-                //you can add a style to the drop zone
-                return options.onDragEnter();
+                return options.onDragStart(event);
+            }
+
+            /**
+             * onDragEnd
+             *
+             * @param {Event} event
+             * @return void
+             */
+            function onDragEnd(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                return options.onDragEnd(event);
             }
 
             /**
@@ -73,7 +97,7 @@ if(typeof jQuery !== undefined){
                 //event.originalEvent.dataTransfer.effectAllowed= "copy";
                 //event.originalEvent.dataTransfer.dropEffect = "copy";
 
-                return options.onDragOver();
+                return options.onDragOver(event);
             }
 
             /**
@@ -87,7 +111,7 @@ if(typeof jQuery !== undefined){
                 event.stopPropagation();
                 addFiles(event.originalEvent.dataTransfer.files);
 
-                return options.onDrop();
+                return options.onDrop(event);
             }
 
 
@@ -273,7 +297,7 @@ if(typeof jQuery !== undefined){
                         } else if (!options.allowDuplicate && fileAlreadyUploaded(files[i])) {
                             return options.error('the file you are trying to upload has already been sent');
                         } else {
-                            if (options.thumbnails) {
+                            if (options.thumbnails || options.thumbnailReady != $.noop) {
                                 var name = files[i].name;
                                 options.thumbnails.div.file = files[i];
                                 reader = new FileReader();
@@ -354,7 +378,12 @@ if(typeof jQuery !== undefined){
 
                     $(thumb).show('slow');
                 }
-                options.thumbnails.div.append(thumbContainer);
+
+                if (options.thumbnailReady != $.noop) {
+                    options.thumbnailReady(thumbContainer);
+                } else {
+                    options.thumbnails.div.append(thumbContainer);
+                }
             }
 
             /**
@@ -395,6 +424,8 @@ if(typeof jQuery !== undefined){
 
             // Dropzone management
             if (options.dropZone != null) {
+                options.dropZone.on('dragstart', onDragStart);
+                options.dropZone.on('dragend', onDragEnd);
                 options.dropZone.on('dragleave', onDragLeave);
                 options.dropZone.on('dragenter', onDragEnter);
                 options.dropZone.on('dragover', onDragOver);
@@ -438,11 +469,14 @@ if(typeof jQuery !== undefined){
             allowDuplicate: false,
             //progressBar: null,
 
+            thumbnailReady: $.noop,
             onFilesSelected: function() { return false; },
-            onDragLeave: function() { return false; },
-            onDragEnter: function() { return false; },
-            onDragOver: function() { return false; },
-            onDrop: function() { return false; },
+            onDragStart: function(event) { return false; },
+            onDragEnd: function(event) { return false; },
+            onDragEnter: function(event) { return false; },
+            onDragLeave: function(event) { return false; },
+            onDragOver: function(event) { return false; },
+            onDrop: function(event) { return false; },
             onUploadProgress: function(event) { return false; },
             beforeUpload: function() { return true; },
             afterUpload: function() { return false; },

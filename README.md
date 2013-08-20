@@ -2,7 +2,7 @@ jquery-image-uploader
 =========
 
 jquery-image-uploader is a jquery plugin to upload file. 
-It supports drap&drop and file API.
+It supports drag&drop and file API.
 The plugin has a automatic "fallback" mode.
 
 This plugin is not really production-ready.
@@ -47,13 +47,14 @@ $('#dropZone').imageUploader({
 
     // all callbacks. The most importants are 'afterUpload' and 'error'
     onFilesSelected: function() { return false; },
-    onDragLeave: function() { return false; },
-    onDragEnter: function() { return false; },
-    onDragOver: function() { return false; },
-    onDrop: function() { return false; },
+    onDragLeave: function(event) { return false; },
+    onDragEnter: function(event) { return false; },
+    onDragOver: function(event) { return false; },
+    onDrop: function(event) { return false; },
     onUploadProgress: function(event) { return false; },
     beforeUpload: function() { return true; },
     afterUpload: function() { return false; },
     error: function(msg) { alert(msg); },
+    thumbnailReady: $.noop // if you want to change the thumbnail action
 });
 ```
