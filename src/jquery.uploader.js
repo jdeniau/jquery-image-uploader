@@ -319,15 +319,14 @@ if(typeof jQuery !== undefined){
                     var reader = null;
 
                     for (var i=0; i < files.length; i++) {
-                        options.onFileAdded(files[i]);
-
                         if (options.maxFileSize > 0 && file.size > options.maxFileSize) {
                             return options.error('the file you are trying to upload is too big');
                         } else if (!options.allowDuplicate && fileAlreadyUploaded(files[i])) {
                             return options.error('the file you are trying to upload has already been sent');
                         } else {
+                            options.onFileAdded(files[i]);
+
                             if (options.thumbnails || options.thumbnailReady != $.noop) {
-                                console.log(files[i], typeof files[i])
                                 if (files[i] instanceof File) {
                                     options.thumbnails.div.file = files[i];
                                     reader = new FileReader();
