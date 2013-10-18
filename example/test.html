@@ -6,7 +6,13 @@
 </head>
 <body>
 
-    Classic upload here : <input id="files" type="file" multiple="true" />
+    <p>
+        Classic upload here : <input id="files" type="file" multiple="true" accept="image/*" />
+    </p>
+    <p>
+        Url upload here :
+        <input id="url" type="url" />
+    </p>
 
     <div id="dropZone" style="width: 800px; height: 100px; border: 1px solid red">
         Click or drop images here...
@@ -18,7 +24,9 @@
     <script>
     $('#dropZone').imageUploader({
         fileField: '#files',
-        url: '/test/example/ajaxUpload.php',
+        urlField: '#url',
+        hideFileField: false,
+        url: 'ajaxUpload.php',
         thumbnails: {
             crop: 'fit',
             width: 200,
