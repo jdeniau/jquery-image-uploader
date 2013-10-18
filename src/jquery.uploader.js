@@ -304,6 +304,8 @@ if(typeof jQuery !== undefined){
                 if (url) {
                     addFiles([ { name: url } ]);
                 }
+
+                return options.onUrlSelected();
             }
 
             /**
@@ -317,6 +319,8 @@ if(typeof jQuery !== undefined){
                     var reader = null;
 
                     for (var i=0; i < files.length; i++) {
+                        options.onFileAdded(files[i]);
+
                         if (options.maxFileSize > 0 && file.size > options.maxFileSize) {
                             return options.error('the file you are trying to upload is too big');
                         } else if (!options.allowDuplicate && fileAlreadyUploaded(files[i])) {
@@ -514,7 +518,10 @@ if(typeof jQuery !== undefined){
             //progressBar: null,
 
             thumbnailReady: $.noop,
+
+            onFileAdded: function(file) { return false; }
             onFilesSelected: function() { return false; },
+            onUrlSelected: function() { return false; },
             onDragStart: function(event) { return false; },
             onDragEnd: function(event) { return false; },
             onDragEnter: function(event) { return false; },
