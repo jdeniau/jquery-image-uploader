@@ -154,14 +154,19 @@ if(typeof jQuery !== undefined){
              */
             function uploadComplete(event) {
                 canUpload = true;
-                var thumbnailToReturn = null;
-                if (currentThumbnail) {
-                    currentThumbnail.find('.progress > div').width('100%');
-                    thumbnailToReturn = currentThumbnail;
-                    currentThumbnail = null;
+
+                if (this.status == 200) {
+                    var thumbnailToReturn = null;
+                    if (currentThumbnail) {
+                        currentThumbnail.find('.progress > div').width('100%');
+                        thumbnailToReturn = currentThumbnail;
+                        currentThumbnail = null;
+                    }
+                    options.afterUpload(event.target.response, thumbnailToReturn);
+                    uploadNextFile();
+                } else {
+                    uploadFailed();
                 }
-                options.afterUpload(event.target.response, thumbnailToReturn);
-                uploadNextFile();
             }
 
             /**
@@ -171,6 +176,7 @@ if(typeof jQuery !== undefined){
              */
             function uploadFailed() {
                 canUpload = true;
+                currentThumbnail.remove();
                 currentThumbnail = null;
                 options.error('upload failed');
                 uploadNextFile();
@@ -241,10 +247,16 @@ if(typeof jQuery !== undefined){
             function uploadFile(file) {
                 //on s'abonne à l'événement progress pour savoir où en est l'upload
                 if (xhr.upload && options.beforeUpload()) {
-                    var fd = new FormData();
-                    fd.append('file', file);
-
                     xhr.open("POST", options.url);
+
+                    if (file instanceof File) {
+                        var fd = new FormData();
+                        fd.append('file', file);
+                    } else {
+                        xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+                        var fd = 'url=' + file.name;
+                    }
+
 
                     // on s'abonne à tout changement de statut pour détecter
                     // une erreur, ou la fin de l'upload
@@ -280,6 +292,19 @@ if(typeof jQuery !== undefined){
 
                 return options.onFilesSelected();
             }
+            
+            /**
+             * onUrlSelected
+             *
+             * @param event $event
+             * @return void
+             */
+            function onUrlSelected(event) {
+                var url = event.target.value;
+                if (url) {
+                    addFiles([ { name: url } ]);
+                }
+            }
 
             /**
              * addFiles add files to the file list
@@ -298,13 +323,17 @@ if(typeof jQuery !== undefined){
                             return options.error('the file you are trying to upload has already been sent');
                         } else {
                             if (options.thumbnails || options.thumbnailReady != $.noop) {
-                                var name = files[i].name;
-                                options.thumbnails.div.file = files[i];
-                                reader = new FileReader();
-                                reader.onload = function (evt) {
-                                    displayImage(evt.target.result);
-                                 };
-                                reader.readAsDataURL(files[i]);
+                                console.log(files[i], typeof files[i])
+                                if (files[i] instanceof File) {
+                                    options.thumbnails.div.file = files[i];
+                                    reader = new FileReader();
+                                    reader.onload = function (evt) {
+                                        displayImage(evt.target.result);
+                                     };
+                                    reader.readAsDataURL(files[i]);
+                                } else {
+                                    displayImage(files[i].name);
+                                }
                             }
 
                             try {
@@ -322,12 +351,12 @@ if(typeof jQuery !== undefined){
             function displayImage(src) {
                 var thumb = new Image();
                 thumb.src = src;
-                //thumb.id = name;
                 $(thumb).hide();
                 var thumbContainer = $('<div />')
                     .attr('data-upload-status', 'waiting')
                     .css({'overflow': 'hidden', 'position': 'relative'})
                     .append(thumb);
+
                 thumb.onload = function() {
                     var otw = options.thumbnails.width;
                     var oth = options.thumbnails.height;
@@ -447,6 +476,14 @@ if(typeof jQuery !== undefined){
                 }
             }
 
+            if (options.urlField != null) {
+                if (typeof options.urlField == 'string') {
+                    options.urlField = $(options.urlField);
+                }
+
+                options.urlField.on('change', onUrlSelected);
+            }
+
             // preparing thumbnails div
             prepareThumbnails();
 
@@ -455,6 +492,7 @@ if(typeof jQuery !== undefined){
 
         $.fn.imageUploader.defaults = {
             fileField: null,
+            urlField: null,
             hideFileField: true,
 
             url: null,

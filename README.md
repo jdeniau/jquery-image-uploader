@@ -18,6 +18,7 @@ Or copy the ```src/jquery-image-uploader.min.js``` file on your server.
 ```js
 $('#dropZone').imageUploader({
 	fileField: '#files',
+	urlField: '#url',
 	url: 'ajaxUpload.php',
 	afterUpload: function (data) {
 		console.log(data);
@@ -28,10 +29,14 @@ $('#dropZone').imageUploader({
 });
 ```
 
+If you drag and drop an image on the "dropZone" or if you use the classic file button, it will call the url, with the file as an argument.
+If you specify a url in the "urlField" field, it will call the url with a POST['url'] attribute containing the image url.
+
 ### Possible options (with default values)
 ```js
 $('#dropZone').imageUploader({
 	fileField: null, // the "simple" file input
+	urlField: null, // a field which accept an "url", and trigger the upload
     hideFileField: true, // hide the file field to show only the drop zone
 	url: 'ajaxUpload.php', // the url called for ajax upload
 
