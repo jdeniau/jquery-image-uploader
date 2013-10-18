@@ -482,6 +482,10 @@ if(typeof jQuery !== undefined){
                 }
 
                 options.urlField.on('change', onUrlSelected);
+
+                if (options.hideUrlField == true) {
+                    options.urlField.hide();
+                }
             }
 
             // preparing thumbnails div
@@ -493,7 +497,9 @@ if(typeof jQuery !== undefined){
         $.fn.imageUploader.defaults = {
             fileField: null,
             urlField: null,
+
             hideFileField: true,
+            hideUrlField: true,
 
             url: null,
 
