@@ -519,7 +519,7 @@ if(typeof jQuery !== undefined){
 
             thumbnailReady: $.noop,
 
-            onFileAdded: function(file) { return false; }
+            onFileAdded: function(file) { return false; },
             onFilesSelected: function() { return false; },
             onUrlSelected: function() { return false; },
             onDragStart: function(event) { return false; },
