@@ -289,6 +289,7 @@ if(typeof jQuery !== undefined){
                 event.preventDefault();
                 event.stopPropagation();
                 addFiles(event.target.files);
+                $(this).val('');
 
                 return options.onFilesSelected();
             }
