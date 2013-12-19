@@ -293,7 +293,7 @@ if(typeof jQuery !== undefined){
 
                 return options.onFilesSelected();
             }
-            
+
             /**
              * onUrlSelected
              *
@@ -301,7 +301,7 @@ if(typeof jQuery !== undefined){
              * @return void
              */
             function onUrlSelected(event) {
-                var url = event.target.value;
+                var url = options.urlField.val();
                 if (url) {
                     addFiles([ { name: url } ]);
                 }
@@ -485,7 +485,14 @@ if(typeof jQuery !== undefined){
                     options.urlField = $(options.urlField);
                 }
 
-                options.urlField.on('change', onUrlSelected);
+                if (options.urlFieldSubmit !== null) {
+                    if (typeof options.urlFieldSubmit == 'string') {
+                        options.urlFieldSubmit = $(options.urlFieldSubmit);
+                    }
+                    options.urlFieldSubmit.on('click', onUrlSelected);
+                } else {
+                    options.urlField.on('change', onUrlSelected);
+                }
 
                 if (options.hideUrlField == true) {
                     options.urlField.hide();
@@ -501,6 +508,7 @@ if(typeof jQuery !== undefined){
         $.fn.imageUploader.defaults = {
             fileField: null,
             urlField: null,
+            urlFieldSubmit: null,
 
             hideFileField: true,
             hideUrlField: true,

@@ -37,6 +37,7 @@ If you specify a url in the "urlField" field, it will call the url with a POST['
 $('#dropZone').imageUploader({
 	fileField: null, // the "simple" file input
 	urlField: null, // a field which accept an "url", and trigger the upload
+	urlFieldSubmit: null, // the submit button for urlField. If null, the urlField gets a "onChange" event
 
     hideFileField: true, // hide the file field to show only the drop zone
     hideUrlField: true, // hide the url field to show only the drop zone
