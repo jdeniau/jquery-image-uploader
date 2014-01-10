@@ -72,7 +72,7 @@ if(typeof jQuery !== undefined){
                 return (window.File && window.FileReader && window.FileList && window.FormData);
             },
 
-            /*
+            /**
              * onDragLeave
              *
              * @param event $event
