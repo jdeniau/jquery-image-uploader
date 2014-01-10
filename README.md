@@ -67,3 +67,13 @@ $('#dropZone').imageUploader({
     thumbnailReady: $.noop // if you want to change the thumbnail action
 });
 ```
+
+### Advange usage
+You can acces the ImageUploader object by getting the ```imageUploader``` data attribute.
+You can then interact on the object itself.
+
+#### Example
+```js
+var imgUrl = 'http://octodex.github.com/images/original.png';
+$('#dropZone').data('imageUploader').addFileByUrl(imgUrl);
+```

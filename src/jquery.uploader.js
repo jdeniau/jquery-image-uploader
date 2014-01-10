@@ -7,505 +7,14 @@
 
 if(typeof jQuery !== undefined){
     (function($){
-        /**
-         * Main function
-         */
-        $.fn.imageUploader = function(params){
-            // ===============================
-            // Settings
-            // ===============================
-            var options = $.extend({}, $.fn.imageUploader.defaults, params);
-            options.dropZone = $(this);
+        // init
+        var ImageUploader = function (params) {
+            this.init(params);
+            this.main();
+        }
 
-            var canUpload = true;
-            var uploadFileList = new Array();
-            var allUploadedFileList = new Array();
-            var currentThumbnail = null;
-
-
-            // ===============================
-            // Internal functions
-            // ===============================
-            /**
-             * fileApiSupported check if the file api is supported
-             *
-             * @return void
-             */
-            function fileApiSupported() {
-                return (window.File && window.FileReader && window.FileList && window.FormData);
-            }
-
-            /**
-             * onDragLeave
-             *
-             * @param event $event
-             * @return void
-             */
-            function onDragLeave(event) {
-                if ($(event.target)[0] === options.dropZone[0]) {
-                    //you can remove a style from the drop zone
-                    return options.onDragLeave(event);
-                }
-            }
-
-            /**
-             * onDragEnter
-             *
-             * @param {Event} event
-             * @return void
-             */
-            function onDragEnter(event) {
-                if ($(event.target)[0] === options.dropZone[0]) {
-                    //you can add a style to the drop zone
-                    return options.onDragEnter(event);
-                }
-            }
-
-            /**
-             * onDragStart
-             *
-             * @param {Event} event
-             * @return void
-             */
-            function onDragStart(event) {
-                event.preventDefault();
-                event.stopPropagation();
-                return options.onDragStart(event);
-            }
-
-            /**
-             * onDragEnd
-             *
-             * @param {Event} event
-             * @return void
-             */
-            function onDragEnd(event) {
-                event.preventDefault();
-                event.stopPropagation();
-                return options.onDragEnd(event);
-            }
-
-            /**
-             * onDragOver
-             *
-             * @param event $event
-             * @return void
-             */
-            function onDragOver(event) {
-                event.preventDefault();
-                event.stopPropagation();
-                //event.originalEvent.dataTransfer.effectAllowed= "copy";
-                //event.originalEvent.dataTransfer.dropEffect = "copy";
-
-                return options.onDragOver(event);
-            }
-
-            /**
-             * onDrop
-             *
-             * @param event $event
-             * @return void
-             */
-            function onDrop(event) {
-                event.preventDefault();
-                event.stopPropagation();
-                addFiles(event.originalEvent.dataTransfer.files);
-
-                return options.onDrop(event);
-            }
-
-
-
-            var xhr = new XMLHttpRequest();
-
-            function uploadStarted(event) {
-                if (options.thumbnails) {
-                    currentThumbnail = options.thumbnails.div.find('[data-upload-status="waiting"]:first');
-                    currentThumbnail.attr('data-upload-status', 'uploading');
-                    currentThumbnail.append($('<div class="progress" />').append($('<div />')));
-                }
-            }
-
-            /**
-             * onUploadProgress
-             *
-             * @param event $event
-             * @return void
-             */
-            function onUploadProgress(event) {
-                if (event.lengthComputable) {
-                    if (!currentThumbnail || currentThumbnail.length == 0) {
-                        uploadStarted();
-                        //currentThumbnail = options.thumbnails.div.find('[data-upload-status="uploading"]:first');
-                    }
-
-                    if (currentThumbnail) {
-                        currentThumbnail.find('.progress > div').width(event.loaded * 100 / event.total + '%');
-                    }
-                }
-
-                return options.onUploadProgress(event);
-            }
-
-            /**
-             * uploadComplete
-             *
-             * @return void
-             */
-            function uploadComplete(event) {
-                canUpload = true;
-
-                if (this.status == 200) {
-                    var thumbnailToReturn = null;
-                    if (currentThumbnail) {
-                        currentThumbnail.find('.progress > div').width('100%');
-                        thumbnailToReturn = currentThumbnail;
-                        currentThumbnail = null;
-                    }
-                    options.afterUpload(event.target.response, thumbnailToReturn);
-                    uploadNextFile();
-                } else {
-                    uploadFailed();
-                }
-            }
-
-            /**
-             * uploadFailed
-             *
-             * @return void
-             */
-            function uploadFailed() {
-                canUpload = true;
-                currentThumbnail.remove();
-                currentThumbnail = null;
-                options.error('upload failed');
-                uploadNextFile();
-            }
-
-            /**
-             * uploadCanceled
-             *
-             * @return void
-             */
-            function uploadCanceled() {
-                canUpload = true;
-                currentThumbnail = null;
-                options.error('upload canceled');
-                uploadNextFile();
-            }
-
-            /**
-             * addUploadFile
-             *
-             * @param file $file
-             * @access public
-             * @return void
-             */
-            function addUploadFile(file) {
-                allUploadedFileList.push(file);
-                uploadFileList.push(file);
-                uploadNextFile();
-            }
-
-            /**
-             * fileAlreadyUploaded
-             *
-             * @param file $file
-             * @access public
-             * @return boolean
-             */
-            function fileAlreadyUploaded(file) {
-                for (i in allUploadedFileList) {
-                    f = allUploadedFileList[i];
-                    if (file.name == f.name && file.size == f.size && file.type == f.type) {
-                        return true;
-                    }
-                }
-                return false;
-            }
-
-            /**
-             * uploadNextFile
-             *
-             * @access public
-             * @return void
-             */
-            function uploadNextFile() {
-                if (canUpload && uploadFileList.length > 0) {
-                    file = uploadFileList.shift();
-                    canUpload = false;
-                    uploadFile(file);
-                }
-            }
-
-            /**
-             * uploadFile upload the file
-             *
-             * @param file $file
-             * @return void
-             */
-            function uploadFile(file) {
-                //on s'abonne à l'événement progress pour savoir où en est l'upload
-                if (xhr.upload && options.beforeUpload()) {
-                    xhr.open("POST", options.url);
-
-                    if (file instanceof File) {
-                        var fd = new FormData();
-                        fd.append('file', file);
-                    } else {
-                        xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-                        var fd = 'url=' + file.name;
-                    }
-
-
-                    // on s'abonne à tout changement de statut pour détecter
-                    // une erreur, ou la fin de l'upload
-                    //xhr.onreadystatechange = onStateChange;
-
-                    /* event listners */
-                    xhr.upload.addEventListener('progress',  onUploadProgress, false);
-                    xhr.addEventListener("loadstart", uploadStarted, false);
-                    xhr.addEventListener("load", uploadComplete, false);
-                    xhr.addEventListener("error", uploadFailed, false);
-                    xhr.addEventListener("abort", uploadCanceled, false);
-
-                    //xhr.setRequestHeader("Content-Type", "multipart/form-data");
-                    xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-                    //xhr.setRequestHeader("X-File-Name", file.name);
-                    //xhr.setRequestHeader("X-File-Size", file.size);
-                    //xhr.setRequestHeader("X-File-Type", file.type);
-
-                    xhr.send(fd);
-                }
-            }
-
-            /**
-             * onFilesSelected
-             *
-             * @param event $event
-             * @return void
-             */
-            function onFilesSelected(event) {
-                event.preventDefault();
-                event.stopPropagation();
-                addFiles(event.target.files);
-                $(this).val('');
-
-                return options.onFilesSelected();
-            }
-
-            /**
-             * onUrlSelected
-             *
-             * @param event $event
-             * @return void
-             */
-            function onUrlSelected(event) {
-                var url = options.urlField.val();
-                if (url) {
-                    addFiles([ { name: url } ]);
-                }
-
-                return options.onUrlSelected();
-            }
-
-            /**
-             * addFiles add files to the file list
-             *
-             * @param files $files
-             * @return void
-             */
-            function addFiles(files) {
-                if (fileApiSupported()) {
-                    var reader = null;
-
-                    for (var i=0; i < files.length; i++) {
-                        if (options.maxFileSize > 0 && file.size > options.maxFileSize) {
-                            return options.error('the file you are trying to upload is too big');
-                        } else if (!options.allowDuplicate && fileAlreadyUploaded(files[i])) {
-                            return options.error('the file you are trying to upload has already been sent');
-                        } else {
-                            options.onFileAdded(files[i]);
-
-                            if (options.thumbnails || options.thumbnailReady != $.noop) {
-                                if (files[i] instanceof File) {
-                                    options.thumbnails.div.file = files[i];
-                                    reader = new FileReader();
-                                    reader.onload = function (evt) {
-                                        displayImage(evt.target.result);
-                                     };
-                                    reader.readAsDataURL(files[i]);
-                                } else {
-                                    displayImage(files[i].name);
-                                }
-                            }
-
-                            try {
-                                addUploadFile(files[i]);
-                            } catch (e) {
-                                uploadFailed();
-                            }
-                        }
-                    }
-               } else {
-                   alert('files api not supported');
-               }
-            }
-
-            function displayImage(src) {
-                var thumb = new Image();
-                thumb.src = src;
-                $(thumb).hide();
-                var thumbContainer = $('<div />')
-                    .attr('data-upload-status', 'waiting')
-                    .css({'overflow': 'hidden', 'position': 'relative'})
-                    .append(thumb);
-
-                thumb.onload = function() {
-                    var otw = options.thumbnails.width;
-                    var oth = options.thumbnails.height;
-                    var ratio = thumb.width / thumb.height;
-
-                    if (options.thumbnails.crop && otw > 0 && oth > 0) {
-                        thumbContainer.width(otw);
-                        thumbContainer.height(oth);
-                        $(thumb).css('position', 'absolute');
-                        var wantedRatio = otw / oth;
-
-                        if (wantedRatio > ratio) {
-                            // portrait image
-                            if (options.thumbnails.crop == 'zoom') {
-                                thumb.width = otw;
-                                thumb.height = otw / ratio;
-                                $(thumb).css('top', '-' + parseInt((thumb.height - oth) / 2) + 'px');
-                            } else {
-                                thumb.width = oth * ratio;
-                                thumb.height = oth;
-                                $(thumb).css('left', parseInt((otw - thumb.width) / 2) + 'px');
-                            }
-                        } else {
-                            if (options.thumbnails.crop == 'zoom') {
-                                thumb.height = oth;
-                                thumb.width = oth * ratio;
-                                $(thumb).css('left', '-' + parseInt((thumb.width - otw) / 2) + 'px');
-                            } else {
-                                thumb.width = otw;
-                                thumb.height = oth / ratio;
-                                $(thumb).css('top', parseInt((oth - thumb.height) / 2) + 'px');
-                            }
-                        }
-                    } else {
-                        if (otw > 0) {
-                            thumb.width = otw;
-                        } else if (oth > 0) {
-                            thumb.width = oth * ratio;
-                        }
-
-                        if (oth > 0) {
-                            thumb.height = oth;
-                        } else if (otw > 0) {
-                            thumb.height = otw / ratio;
-                        }
-                    }
-                    $(thumb).css({ width: thumb.width, height : thumb.height });
-
-                    $(thumb).show('slow');
-                }
-
-                if (options.thumbnailReady != $.noop) {
-                    options.thumbnailReady(thumbContainer);
-                } else {
-                    options.thumbnails.div.append(thumbContainer);
-                }
-            }
-
-            /**
-             * prepare thumbnails div
-             *
-             * @return void
-             */
-            function prepareThumbnails() {
-                if (options.thumbnails) {
-                    if (typeof options.thumbnails != 'object') {
-                        var tmpDiv = null;
-                        if (typeof options.thumbnails == 'string') {
-                            tmpDiv = $(options.thumbnails);
-                        }
-                        options.thumbnails = { div: tmpDiv, width: null, height: null };
-                    }
-
-                    if (typeof options.thumbnails.div == 'string') {
-                        options.thumbnails.div = $(options.thumbnails.div);
-                    }
-
-                    if (typeof options.thumbnails == 'object' && options.thumbnails.div == undefined) {
-                        options.thumbnails.div = null;
-                    }
-
-                    if (options.thumbnails.div == null) {
-                        options.thumbnails.div = $('<div class="fileUploadThumbnails" />');
-                        options.dropZone.after(options.thumbnails.div);
-                    }
-                }
-            }
-
-
-
-            // ===============================
-            // main process
-            // ===============================
-
-            // Dropzone management
-            if (options.dropZone != null) {
-                options.dropZone.on('dragstart', onDragStart);
-                options.dropZone.on('dragend', onDragEnd);
-                options.dropZone.on('dragleave', onDragLeave);
-                options.dropZone.on('dragenter', onDragEnter);
-                options.dropZone.on('dragover', onDragOver);
-                options.dropZone.on('drop', onDrop);
-            }
-
-            if (options.fileField != null) {
-                // open fileField on click on the dropZone
-                options.dropZone.on('click', function() {
-                    options.fileField.trigger('click');
-                });
-
-                if (typeof options.fileField == 'string') {
-                    options.fileField = $(options.fileField);
-                }
-                options.fileField.on('change', onFilesSelected);
-                if (options.hideFileField == true) {
-                    options.fileField.hide();
-                }
-            }
-
-            if (options.urlField != null) {
-                if (typeof options.urlField == 'string') {
-                    options.urlField = $(options.urlField);
-                }
-
-                if (options.urlFieldSubmit !== null) {
-                    if (typeof options.urlFieldSubmit == 'string') {
-                        options.urlFieldSubmit = $(options.urlFieldSubmit);
-                    }
-                    options.urlFieldSubmit.on('click', onUrlSelected);
-                } else {
-                    options.urlField.on('change', onUrlSelected);
-                }
-
-                if (options.hideUrlField == true) {
-                    options.urlField.hide();
-                }
-            }
-
-            // preparing thumbnails div
-            prepareThumbnails();
-
-            return this;
-        };
-
-        $.fn.imageUploader.defaults = {
+        // default settings
+        ImageUploader.defaults = {
             fileField: null,
             urlField: null,
             urlFieldSubmit: null,
@@ -539,16 +48,518 @@ if(typeof jQuery !== undefined){
             onUploadProgress: function(event) { return false; },
             beforeUpload: function() { return true; },
             afterUpload: function() { return false; },
-            error: function(msg) { alert(msg); },
+            error: function(msg) { alert(msg); }
+        }
 
-            debug: false
+        ImageUploader.prototype = {
+            // Init
+            init: function (params) {
+                instance = this;
+                this.options = $.extend({}, ImageUploader.defaults, params);
+
+                this.canUpload = true;
+                this.uploadFileList = new Array();
+                this.allUploadedFileList = new Array();
+                this.currentThumbnail = null;
+            },
+
+            /**
+             * fileApiSupported check if the file api is supported
+             *
+             * @return void
+             */
+            fileApiSupported: function() {
+                return (window.File && window.FileReader && window.FileList && window.FormData);
+            },
+
+            /*
+             * onDragLeave
+             *
+             * @param event $event
+             * @return void
+             */
+            onDragLeave: function(event) {
+                if ($(event.target)[0] === instance.options.dropZone[0]) {
+                    //you can remove a style from the drop zone
+                    return instance.options.onDragLeave(event);
+                }
+            },
+
+            /**
+             * onDragEnter
+             *
+             * @param {Event} event
+             * @return void
+             */
+            onDragEnter: function (event) {
+                if ($(event.target)[0] === instance.options.dropZone[0]) {
+                    //you can add a style to the drop zone
+                    return instance.options.onDragEnter(event);
+                }
+            },
+
+            /**
+             * onDragStart
+             *
+             * @param {Event} event
+             * @return void
+             */
+            onDragStart: function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                return instance.options.onDragStart(event);
+            },
+
+            /**
+             * onDragEnd
+             *
+             * @param {Event} event
+             * @return void
+             */
+            onDragEnd: function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                return instance.options.onDragEnd(event);
+            },
+
+            /**
+             * onDragOver
+             *
+             * @param event $event
+             * @return void
+             */
+            onDragOver: function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                //event.originalEvent.dataTransfer.effectAllowed= "copy";
+                //event.originalEvent.dataTransfer.dropEffect = "copy";
+
+                return instance.options.onDragOver(event);
+            },
+
+            /**
+             * onDrop
+             *
+             * @param event $event
+             * @return void
+             */
+            onDrop: function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                instance.addFiles(event.originalEvent.dataTransfer.files);
+
+                return instance.options.onDrop(event);
+            },
+
+
+            uploadStarted: function (event) {
+                if (instance.options.thumbnails) {
+                    instance.currentThumbnail = instance.options.thumbnails.div.find('[data-upload-status="waiting"]:first');
+                    instance.currentThumbnail.attr('data-upload-status', 'uploading');
+                    instance.currentThumbnail.append($('<div class="progress" />').append($('<div />')));
+                }
+            },
+
+            /**
+             * onUploadProgress
+             *
+             * @param event $event
+             * @return void
+             */
+            onUploadProgress: function (event) {
+                if (event.lengthComputable) {
+                    if (!instance.currentThumbnail || instance.currentThumbnail.length == 0) {
+                        instance.uploadStarted();
+                        //instance.currentThumbnail = instance.options.thumbnails.div.find('[data-upload-status="uploading"]:first');
+                    }
+
+                    if (instance.currentThumbnail) {
+                        instance.currentThumbnail.find('.progress > div').width(event.loaded * 100 / event.total + '%');
+                    }
+                }
+
+                return instance.options.onUploadProgress(event);
+            },
+
+            /**
+             * uploadComplete
+             *
+             * @return void
+             */
+            uploadComplete: function (event) {
+                xhr = event.currentTarget;
+                instance.canUpload = true;
+
+                if (xhr.status == 200) {
+                    var thumbnailToReturn = null;
+                    if (instance.currentThumbnail) {
+                        instance.currentThumbnail.find('.progress > div').width('100%');
+                        thumbnailToReturn = instance.currentThumbnail;
+                        instance.currentThumbnail = null;
+                    }
+                    instance.options.afterUpload(event.target.response, thumbnailToReturn);
+                    instance.uploadNextFile();
+                } else {
+                    instance.uploadFailed();
+                }
+            },
+
+            /**
+             * uploadFailed
+             *
+             * @return void
+             */
+            uploadFailed: function () {
+                this.canUpload = true;
+                if (this.currentThumbnail) {
+                    this.currentThumbnail.remove();
+                }
+                this.currentThumbnail = null;
+                this.options.error('upload failed');
+                this.uploadNextFile();
+            },
+
+            /**
+             * uploadCanceled
+             *
+             * @return void
+             */
+            uploadCanceled: function () {
+                this.canUpload = true;
+                this.currentThumbnail = null;
+                this.options.error('upload canceled');
+                this.uploadNextFile();
+            },
+
+            /**
+             * addUploadFile
+             *
+             * @param file $file
+             * @access public
+             * @return void
+             */
+            addUploadFile: function (file) {
+                this.allUploadedFileList.push(file);
+                this.uploadFileList.push(file);
+                this.uploadNextFile();
+            },
+
+            /**
+             * fileAlreadyUploaded
+             *
+             * @param file $file
+             * @access public
+             * @return boolean
+             */
+            fileAlreadyUploaded: function (file) {
+                for (i in this.allUploadedFileList) {
+                    f = this.allUploadedFileList[i];
+                    if (file.name == f.name && file.size == f.size && file.type == f.type) {
+                        return true;
+                    }
+                }
+                return false;
+            },
+
+            /**
+             * uploadNextFile
+             *
+             * @access public
+             * @return void
+             */
+            uploadNextFile: function () {
+                if (this.canUpload && this.uploadFileList.length > 0) {
+                    file = this.uploadFileList.shift();
+                    this.canUpload = false;
+                    this.uploadFile(file);
+                }
+            },
+
+            /**
+             * uploadFile upload the file
+             *
+             * @param file $file
+             * @return void
+             */
+            uploadFile: function (file) {
+                xhr = new XMLHttpRequest();
+                if (xhr.upload && this.options.beforeUpload()) {
+                    xhr.open("POST", this.options.url);
+
+                    if (file instanceof File) {
+                        var fd = new FormData();
+                        fd.append('file', file);
+                    } else {
+                        xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+                        var fd = 'url=' + file.name;
+                    }
+
+
+                    /* event listners */
+                    xhr.upload.addEventListener('progress',  this.onUploadProgress, false);
+                    xhr.addEventListener("loadstart", this.uploadStarted, false);
+                    xhr.addEventListener("load", this.uploadComplete, false);
+                    xhr.addEventListener("error", this.uploadFailed, false);
+                    xhr.addEventListener("abort", this.uploadCanceled, false);
+
+                    //xhr.setRequestHeader("Content-Type", "multipart/form-data");
+                    xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+                    //xhr.setRequestHeader("X-File-Name", file.name);
+                    //xhr.setRequestHeader("X-File-Size", file.size);
+                    //xhr.setRequestHeader("X-File-Type", file.type);
+
+                    xhr.send(fd);
+                }
+            },
+
+            /**
+             * onFilesSelected
+             *
+             * @param event $event
+             * @return void
+             */
+            onFilesSelected: function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                instance.addFiles(event.target.files);
+                $(this).val('');
+
+                return instance.options.onFilesSelected();
+            },
+
+            /**
+             * onUrlSelected
+             *
+             * @param event $event
+             * @return void
+             */
+            onUrlSelected: function (event) {
+                var url = instance.options.urlField.val();
+                if (url) {
+                    instance.addFileByUrl(url);
+                }
+
+                return instance.options.onUrlSelected();
+            },
+
+            /**
+             * add a file by Url
+             */
+            addFileByUrl: function (url) {
+                return this.addFile({ name: url });
+            },
+
+            /**
+             * addFile add a single file to the file list
+             */
+            addFile: function (file) {
+                return this.addFiles([file]);
+            },
+
+            /**
+             * addFiles add files to the file list
+             *
+             * @param files $files
+             * @return void
+             */
+            addFiles: function (files) {
+                if (this.fileApiSupported()) {
+                    var reader = null;
+
+                    for (var i=0; i < files.length; i++) {
+                        if (this.options.maxFileSize > 0 && file.size > this.options.maxFileSize) {
+                            return this.options.error('the file you are trying to upload is too big');
+                        } else if (!this.options.allowDuplicate && this.fileAlreadyUploaded(files[i])) {
+                            return this.options.error('the file you are trying to upload has already been sent');
+                        } else {
+                            this.options.onFileAdded(files[i]);
+
+                            if (this.options.thumbnails || this.options.thumbnailReady != $.noop) {
+                                if (files[i] instanceof File) {
+                                    this.options.thumbnails.div.file = files[i];
+                                    reader = new FileReader();
+                                    reader.onload = function (evt) {
+                                        instance.displayImage(evt.target.result);
+                                     };
+                                    reader.readAsDataURL(files[i]);
+                                } else {
+                                    this.displayImage(files[i].name);
+                                }
+                            }
+
+                            try {
+                                this.addUploadFile(files[i]);
+                            } catch (e) {
+                                this.uploadFailed();
+                            }
+                        }
+                    }
+               } else {
+                   alert('files api not supported');
+               }
+            },
+
+            displayImage: function (src) {
+                var thumb = new Image();
+                thumb.src = src;
+                $(thumb).hide();
+                var thumbContainer = $('<div />')
+                    .attr('data-upload-status', 'waiting')
+                    .css({'overflow': 'hidden', 'position': 'relative'})
+                    .append(thumb);
+
+                thumb.onload = function() {
+                    var otw = instance.options.thumbnails.width;
+                    var oth = instance.options.thumbnails.height;
+                    var ratio = thumb.width / thumb.height;
+
+                    if (instance.options.thumbnails.crop && otw > 0 && oth > 0) {
+                        thumbContainer.width(otw);
+                        thumbContainer.height(oth);
+                        $(thumb).css('position', 'absolute');
+                        var wantedRatio = otw / oth;
+
+                        if (wantedRatio > ratio) {
+                            // portrait image
+                            if (instance.options.thumbnails.crop == 'zoom') {
+                                thumb.width = otw;
+                                thumb.height = otw / ratio;
+                                $(thumb).css('top', '-' + parseInt((thumb.height - oth) / 2) + 'px');
+                            } else {
+                                thumb.width = oth * ratio;
+                                thumb.height = oth;
+                                $(thumb).css('left', parseInt((otw - thumb.width) / 2) + 'px');
+                            }
+                        } else {
+                            if (instance.options.thumbnails.crop == 'zoom') {
+                                thumb.height = oth;
+                                thumb.width = oth * ratio;
+                                $(thumb).css('left', '-' + parseInt((thumb.width - otw) / 2) + 'px');
+                            } else {
+                                thumb.width = otw;
+                                thumb.height = oth / ratio;
+                                $(thumb).css('top', parseInt((oth - thumb.height) / 2) + 'px');
+                            }
+                        }
+                    } else {
+                        if (otw > 0) {
+                            thumb.width = otw;
+                        } else if (oth > 0) {
+                            thumb.width = oth * ratio;
+                        }
+
+                        if (oth > 0) {
+                            thumb.height = oth;
+                        } else if (otw > 0) {
+                            thumb.height = otw / ratio;
+                        }
+                    }
+                    $(thumb).css({ width: thumb.width, height : thumb.height });
+
+                    $(thumb).show('slow');
+                }
+
+                if (instance.options.thumbnailReady != $.noop) {
+                    instance.options.thumbnailReady(thumbContainer);
+                } else {
+                    instance.options.thumbnails.div.append(thumbContainer);
+                }
+            },
+
+            /**
+             * prepare thumbnails div
+             *
+             * @return void
+             */
+            prepareThumbnails: function () {
+                if (this.options.thumbnails) {
+                    if (typeof this.options.thumbnails != 'object') {
+                        var tmpDiv = null;
+                        if (typeof this.options.thumbnails == 'string') {
+                            tmpDiv = $(this.options.thumbnails);
+                        }
+                        this.options.thumbnails = { div: tmpDiv, width: null, height: null };
+                    }
+
+                    if (typeof this.options.thumbnails.div == 'string') {
+                        this.options.thumbnails.div = $(this.options.thumbnails.div);
+                    }
+
+                    if (typeof this.options.thumbnails == 'object' && this.options.thumbnails.div == undefined) {
+                        this.options.thumbnails.div = null;
+                    }
+
+                    if (this.options.thumbnails.div == null) {
+                        this.options.thumbnails.div = $('<div class="fileUploadThumbnails" />');
+                        this.options.dropZone.after(this.options.thumbnails.div);
+                    }
+                }
+            },
+
+            main: function() {
+                // ===============================
+                // main process
+                // ===============================
+
+                // Dropzone management
+                if (this.options.dropZone != null) {
+                    this.options.dropZone.on('dragstart', this.onDragStart);
+                    this.options.dropZone.on('dragend', this.onDragEnd);
+                    this.options.dropZone.on('dragleave', this.onDragLeave);
+                    this.options.dropZone.on('dragenter', this.onDragEnter);
+                    this.options.dropZone.on('dragover', this.onDragOver);
+                    this.options.dropZone.on('drop', this.onDrop);
+                }
+
+                if (this.options.fileField != null) {
+                    // open fileField on click on the dropZone
+                    this.options.dropZone.on('click', function() {
+                        this.options.fileField.trigger('click');
+                    });
+
+                    if (typeof this.options.fileField == 'string') {
+                        this.options.fileField = $(this.options.fileField);
+                    }
+                    this.options.fileField.on('change', this.onFilesSelected);
+                    if (this.options.hideFileField == true) {
+                        this.options.fileField.hide();
+                    }
+                }
+
+                if (this.options.urlField != null) {
+                    if (typeof this.options.urlField == 'string') {
+                        this.options.urlField = $(this.options.urlField);
+                    }
+
+                    if (this.options.urlFieldSubmit !== null) {
+                        if (typeof this.options.urlFieldSubmit == 'string') {
+                            this.options.urlFieldSubmit = $(this.options.urlFieldSubmit);
+                        }
+                        this.options.urlFieldSubmit.on('click', this.onUrlSelected);
+                    } else {
+                        this.options.urlField.on('change', this.onUrlSelected);
+                    }
+
+                    if (this.options.hideUrlField == true) {
+                        this.options.urlField.hide();
+                    }
+                }
+
+                // preparing thumbnails div
+                this.prepareThumbnails();
+
+                return this;
+            }
         };
 
-        function debug(i) {
-            if (window.console && window.console.log && $.fn.imageUploader.defaults.debug == true) {
-                console.log(i);
-            }
-        }
+        $.fn.imageUploader = function(params) {
+            params = $.extend({ dropZone: $(this) }, params);
+            var instance = new ImageUploader(params);
+
+            $(this).data('imageUploader', instance);
+
+            return this;
+        };
 
     })(jQuery);
 }
