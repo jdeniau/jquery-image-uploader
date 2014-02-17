@@ -500,6 +500,7 @@ if(typeof jQuery !== undefined){
                 // ===============================
                 // main process
                 // ===============================
+                var othis = this;
 
                 // Dropzone management
                 if (this.options.dropZone != null) {
@@ -513,13 +514,13 @@ if(typeof jQuery !== undefined){
 
                 if (this.options.fileField != null) {
                     // open fileField on click on the dropZone
-                    this.options.dropZone.on('click', function() {
-                        this.options.fileField.trigger('click');
-                    });
-
                     if (typeof this.options.fileField == 'string') {
                         this.options.fileField = $(this.options.fileField);
                     }
+                    this.options.dropZone.on('click', function() {
+                        othis.options.fileField.trigger('click');
+                    });
+
                     this.options.fileField.on('change', this.onFilesSelected);
                     if (this.options.hideFileField == true) {
                         this.options.fileField.hide();
