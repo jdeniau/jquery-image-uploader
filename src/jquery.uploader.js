@@ -291,7 +291,7 @@ if(typeof jQuery !== undefined){
                         fd.append('file', file);
                     } else {
                         xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-                        var fd = 'url=' + file.name;
+                        var fd = 'url=' + encodeURIComponent(file.name);
                     }
 
 
