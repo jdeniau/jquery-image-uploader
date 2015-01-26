@@ -523,7 +523,7 @@ if(typeof jQuery !== undefined){
 
                     this.options.fileField.on('change', this.onFilesSelected);
                     if (this.options.hideFileField == true) {
-                        this.options.fileField.hide();
+                        this.hide(this.options.fileField);
                     }
                 }
 
@@ -542,7 +542,7 @@ if(typeof jQuery !== undefined){
                     }
 
                     if (this.options.hideUrlField == true) {
-                        this.options.urlField.hide();
+                        this.hide(this.options.urlField);
                     }
                 }
 
@@ -550,6 +550,22 @@ if(typeof jQuery !== undefined){
                 this.prepareThumbnails();
 
                 return this;
+            },
+
+            /**
+             * Hide a jquery element. Use size=0x0 instead of native jquery hide()
+             * to avoid safari bugs
+             *
+             * @return void
+             */
+            hide: function($element) {
+                $element.css({
+                    'width': '0px',
+                    'height': '0px',
+                    'padding': '0px',
+                    'margin': '0px',
+                    'border': 'none'
+                });
             }
         };
 
