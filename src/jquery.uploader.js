@@ -563,6 +563,7 @@ if(typeof jQuery !== undefined){
                     'width': '0px',
                     'height': '0px',
                     'padding': '0px',
+                    'margin': '0px',
                     'border': 'none'
                 });
             }
