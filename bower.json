@@ -1,10 +1,25 @@
 {
   "name": "jquery-image-uploader",
-  "version": "0.3.2",
-  "main": "src/jqueryUploader.js",
+  "version": "0.3.4",
+  "main": "src/jquery.uploader.js",
+  "license": "MIT",
   "ignore": [
     "**/.*",
     "node_modules",
-    "components"
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "~1.9.0"
+  },
+  "homepage": "https://github.com/jdeniau/jquery-image-uploader",
+  "authors": [
+    "Julien Deniau <julien.deniau@gmail.com>"
+  ],
+  "description": "JQuery plugin for file uploading",
+  "keywords": [
+    "jquery",
+    "fileupload"
   ]
 }

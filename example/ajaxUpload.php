@@ -1,7 +1,9 @@
 <?php
-//http://www.profilepicture.co.uk/tutorials/ajax-file-upload-xmlhttprequest-level-2/
 
-class UploadException extends Exception {}
+class UploadException extends Exception
+{
+
+}
 
 class File_Streamer
 {
@@ -13,9 +15,12 @@ class File_Streamer
     {
     }
 
-    public function setDestination($p)
+    public function setDestination($path)
     {
-        $this->path = $p;
+        $this->path = $path;
+        if (!file_exists($path)) {
+            mkdir($path);
+        }
     }
 
     public function receive()
@@ -57,7 +62,7 @@ class File_Streamer
                     throw new UploadException('Unable to upload file : file not found');
                 }
 
-                if (filesize($uploadFile) > 5242880) {
+                if (filesize($uploadFile) > 5*1024*1024) {
                     throw new UploadException('Unable to upload file : file too big');
                 }
 
@@ -77,28 +82,15 @@ class File_Streamer
                     throw new UploadException('File type not allowed');
                 }
 
-                /*
-                   if ($fileInfo[0] > 3000 || $fileInfo[1] > 3000) {
-                   throw new UploadException('Unable to upload file : file too big');
-                   }
-                 */
-
                 return $fileName;
             } catch (UploadException $e) {
                 @unlink($uploadFile);
             }
         }
 
-
-
         if (!$this->contentLength > 0) {
             throw new Exception('No file uploaded!');
         }
-
-        //file_put_contents(
-        //    $this->path . $this->fileName,
-        //    file_get_contents("php://input")
-        //);
 
         return true;
     }
