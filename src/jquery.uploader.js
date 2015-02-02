@@ -1,8 +1,8 @@
-/**
+/*!
  * ImageUploader (for jQuery)
- * version: 1.0 (29/01/2012)
- * @requires jQuery v1.4.0 or later
- * @author Julien DENIAU
+ * Version 0.3.4 (26/01/2015)
+ * Copyright 2012-* Julien Deniau <julien.deniau@gmail.com>
+ * Licensed under MIT (https://github.com/jdeniau/jquery-image-uploader/LICENSE.md)
  */
 
 if(typeof jQuery !== undefined){
