@@ -296,11 +296,11 @@ if(typeof jQuery !== undefined){
 
 
                     /* event listners */
-                    xhr.upload.addEventListener('progress',  this.onUploadProgress, false);
-                    xhr.addEventListener("loadstart", this.uploadStarted, false);
-                    xhr.addEventListener("load", this.uploadComplete, false);
-                    xhr.addEventListener("error", this.uploadFailed, false);
-                    xhr.addEventListener("abort", this.uploadCanceled, false);
+                    xhr.upload.addEventListener('progress',  this.onUploadProgress.bind(this), false);
+                    xhr.addEventListener("loadstart", this.uploadStarted.bind(this), false);
+                    xhr.addEventListener("load", this.uploadComplete.bind(this), false);
+                    xhr.addEventListener("error", this.uploadFailed.bind(this), false);
+                    xhr.addEventListener("abort", this.uploadCanceled.bind(this), false);
 
                     //xhr.setRequestHeader("Content-Type", "multipart/form-data");
                     xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
