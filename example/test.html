@@ -21,6 +21,24 @@
     <div id="thumbnails">
     </div>
 
+
+    <h2>2</h2>
+    <p>
+        Classic upload here : <input id="files2" type="file" multiple="true" accept="image/*" />
+    </p>
+    <p>
+        Url upload here :
+        <input id="url2" type="url" />
+    </p>
+
+
+    <div id="dropZone2" style="width: 800px; height: 100px; border: 1px solid red">
+        Click or drop images here...
+    </div>
+
+    <div id="thumbnails2">
+    </div>
+
     <script>
     $('#dropZone').imageUploader({
         fileField: '#files',
@@ -29,6 +47,34 @@
         hideUrlField: false,
         url: 'ajaxUpload.php',
         thumbnails: {
+            div: '#thumbnails',
+            crop: 'fit',
+            width: 300,
+            height: 300
+        },
+        afterUpload: function (data) { console.log('after upload', data); },
+        onFileAdded: function(file)        { console.log(file); },
+        onFilesSelected: function()        { console.log('file selected'); },
+        onUrlSelected: function()          { console.log('url selected'); },
+        onDragStart: function(event)       { console.log(event); },
+        onDragEnd: function(event)         { console.log(event); },
+        onDragEnter: function(event)       { console.log(event); },
+        onDragLeave: function(event)       { console.log(event); },
+        onDragOver: function(event)        { console.log(event); },
+        onDrop: function(event)            { console.log(event); },
+        onUploadProgress: function(event)  { console.log(event); },
+        beforeUpload: function()           { console.log('before upload'); return true; },
+        error: function(msg) { alert(msg); },
+    });
+
+    $('#dropZone2').imageUploader({
+        fileField: '#files2',
+        urlField: '#url2',
+        hideFileField: false,
+        hideUrlField: false,
+        url: 'ajaxUpload.php',
+        thumbnails: {
+            div: '#thumbnails2',
             crop: 'fit',
             width: 200,
             height: 200
@@ -37,6 +83,7 @@
             console.log(data);
         }
     });
+
     </script>
 
     <style>

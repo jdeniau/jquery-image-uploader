@@ -9,6 +9,8 @@ if(typeof jQuery !== undefined){
     (function($){
         // init
         var ImageUploader = function (params) {
+            this.currentThumbnail = null;
+            this.options = [];
             this.init(params);
             this.main();
         }
@@ -54,7 +56,6 @@ if(typeof jQuery !== undefined){
         ImageUploader.prototype = {
             // Init
             init: function (params) {
-                instance = this;
                 this.options = $.extend({}, ImageUploader.defaults, params);
 
                 this.canUpload = true;
@@ -79,9 +80,9 @@ if(typeof jQuery !== undefined){
              * @return void
              */
             onDragLeave: function(event) {
-                if ($(event.target)[0] === instance.options.dropZone[0]) {
+                if ($(event.target)[0] === event.data.instance.options.dropZone[0]) {
                     //you can remove a style from the drop zone
-                    return instance.options.onDragLeave(event);
+                    return event.data.instance.options.onDragLeave(event);
                 }
             },
 
@@ -92,9 +93,9 @@ if(typeof jQuery !== undefined){
              * @return void
              */
             onDragEnter: function (event) {
-                if ($(event.target)[0] === instance.options.dropZone[0]) {
+                if ($(event.target)[0] === event.data.instance.options.dropZone[0]) {
                     //you can add a style to the drop zone
-                    return instance.options.onDragEnter(event);
+                    return event.data.instance.options.onDragEnter(event);
                 }
             },
 
@@ -107,7 +108,7 @@ if(typeof jQuery !== undefined){
             onDragStart: function (event) {
                 event.preventDefault();
                 event.stopPropagation();
-                return instance.options.onDragStart(event);
+                return event.data.instance.options.onDragStart(event);
             },
 
             /**
@@ -119,7 +120,7 @@ if(typeof jQuery !== undefined){
             onDragEnd: function (event) {
                 event.preventDefault();
                 event.stopPropagation();
-                return instance.options.onDragEnd(event);
+                return event.data.instance.options.onDragEnd(event);
             },
 
             /**
@@ -134,7 +135,7 @@ if(typeof jQuery !== undefined){
                 //event.originalEvent.dataTransfer.effectAllowed= "copy";
                 //event.originalEvent.dataTransfer.dropEffect = "copy";
 
-                return instance.options.onDragOver(event);
+                return event.data.instance.options.onDragOver(event);
             },
 
             /**
@@ -146,17 +147,17 @@ if(typeof jQuery !== undefined){
             onDrop: function (event) {
                 event.preventDefault();
                 event.stopPropagation();
-                instance.addFiles(event.originalEvent.dataTransfer.files);
+                event.data.instance.addFiles(event.originalEvent.dataTransfer.files);
 
-                return instance.options.onDrop(event);
+                return event.data.instance.options.onDrop(event);
             },
 
 
             uploadStarted: function (event) {
-                if (instance.options.thumbnails) {
-                    instance.currentThumbnail = instance.options.thumbnails.div.find('[data-upload-status="waiting"]:first');
-                    instance.currentThumbnail.attr('data-upload-status', 'uploading');
-                    instance.currentThumbnail.append($('<div class="progress" />').append($('<div />')));
+                if (this.options.thumbnails) {
+                    this.currentThumbnail = this.options.thumbnails.div.find('[data-upload-status="waiting"]:first');
+                    this.currentThumbnail.attr('data-upload-status', 'uploading');
+                    this.currentThumbnail.append($('<div class="progress" />').append($('<div />')));
                 }
             },
 
@@ -168,17 +169,17 @@ if(typeof jQuery !== undefined){
              */
             onUploadProgress: function (event) {
                 if (event.lengthComputable) {
-                    if (!instance.currentThumbnail || instance.currentThumbnail.length == 0) {
-                        instance.uploadStarted();
-                        //instance.currentThumbnail = instance.options.thumbnails.div.find('[data-upload-status="uploading"]:first');
+                    if (!this.currentThumbnail || this.currentThumbnail.length == 0) {
+                        this.uploadStarted();
+                        //this.currentThumbnail = this.options.thumbnails.div.find('[data-upload-status="uploading"]:first');
                     }
 
-                    if (instance.currentThumbnail) {
-                        instance.currentThumbnail.find('.progress > div').width(event.loaded * 100 / event.total + '%');
+                    if (this.currentThumbnail) {
+                        this.currentThumbnail.find('.progress > div').width(event.loaded * 100 / event.total + '%');
                     }
                 }
 
-                return instance.options.onUploadProgress(event);
+                return this.options.onUploadProgress(event);
             },
 
             /**
@@ -188,19 +189,19 @@ if(typeof jQuery !== undefined){
              */
             uploadComplete: function (event) {
                 xhr = event.currentTarget;
-                instance.canUpload = true;
+                this.canUpload = true;
 
                 if (xhr.status == 200) {
                     var thumbnailToReturn = null;
-                    if (instance.currentThumbnail) {
-                        instance.currentThumbnail.find('.progress > div').width('100%');
-                        thumbnailToReturn = instance.currentThumbnail;
-                        instance.currentThumbnail = null;
+                    if (this.currentThumbnail) {
+                        this.currentThumbnail.find('.progress > div').width('100%');
+                        thumbnailToReturn = this.currentThumbnail;
+                        this.currentThumbnail = null;
                     }
-                    instance.options.afterUpload(event.target.response, thumbnailToReturn);
-                    instance.uploadNextFile();
+                    this.options.afterUpload(event.target.response, thumbnailToReturn);
+                    this.uploadNextFile();
                 } else {
-                    instance.uploadFailed();
+                    this.uploadFailed();
                 }
             },
 
@@ -321,10 +322,10 @@ if(typeof jQuery !== undefined){
             onFilesSelected: function (event) {
                 event.preventDefault();
                 event.stopPropagation();
-                instance.addFiles(event.target.files);
+                event.data.instance.addFiles(event.target.files);
                 $(this).val('');
 
-                return instance.options.onFilesSelected();
+                return event.data.instance.options.onFilesSelected();
             },
 
             /**
@@ -334,6 +335,7 @@ if(typeof jQuery !== undefined){
              * @return void
              */
             onUrlSelected: function (event) {
+                var instance = event.data.instance;
                 var url = instance.options.urlField.val();
                 if (url) {
                     instance.addFileByUrl(url);
@@ -378,8 +380,9 @@ if(typeof jQuery !== undefined){
                                 if (files[i] instanceof File) {
                                     this.options.thumbnails.div.file = files[i];
                                     reader = new FileReader();
+                                    var _this = this;
                                     reader.onload = function (evt) {
-                                        instance.displayImage(evt.target.result);
+                                        _this.displayImage(evt.target.result);
                                      };
                                     reader.readAsDataURL(files[i]);
                                 } else {
@@ -408,12 +411,13 @@ if(typeof jQuery !== undefined){
                     .css({'overflow': 'hidden', 'position': 'relative'})
                     .append(thumb);
 
+                var _this = this;
                 thumb.onload = function() {
-                    var otw = instance.options.thumbnails.width;
-                    var oth = instance.options.thumbnails.height;
+                    var otw = _this.options.thumbnails.width;
+                    var oth = _this.options.thumbnails.height;
                     var ratio = thumb.width / thumb.height;
 
-                    if (instance.options.thumbnails.crop && otw > 0 && oth > 0) {
+                    if (_this.options.thumbnails.crop && otw > 0 && oth > 0) {
                         thumbContainer.width(otw);
                         thumbContainer.height(oth);
                         $(thumb).css('position', 'absolute');
@@ -421,7 +425,7 @@ if(typeof jQuery !== undefined){
 
                         if (wantedRatio > ratio) {
                             // portrait image
-                            if (instance.options.thumbnails.crop == 'zoom') {
+                            if (_this.options.thumbnails.crop == 'zoom') {
                                 thumb.width = otw;
                                 thumb.height = otw / ratio;
                                 $(thumb).css('top', '-' + parseInt((thumb.height - oth) / 2) + 'px');
@@ -431,7 +435,7 @@ if(typeof jQuery !== undefined){
                                 $(thumb).css('left', parseInt((otw - thumb.width) / 2) + 'px');
                             }
                         } else {
-                            if (instance.options.thumbnails.crop == 'zoom') {
+                            if (_this.options.thumbnails.crop == 'zoom') {
                                 thumb.height = oth;
                                 thumb.width = oth * ratio;
                                 $(thumb).css('left', '-' + parseInt((thumb.width - otw) / 2) + 'px');
@@ -459,10 +463,10 @@ if(typeof jQuery !== undefined){
                     $(thumb).show('slow');
                 }
 
-                if (instance.options.thumbnailReady != $.noop) {
-                    instance.options.thumbnailReady(thumbContainer);
+                if (this.options.thumbnailReady != $.noop) {
+                    this.options.thumbnailReady(thumbContainer);
                 } else {
-                    instance.options.thumbnails.div.append(thumbContainer);
+                    this.options.thumbnails.div.append(thumbContainer);
                 }
             },
 
@@ -500,16 +504,16 @@ if(typeof jQuery !== undefined){
                 // ===============================
                 // main process
                 // ===============================
-                var othis = this;
+                var _this = this;
 
                 // Dropzone management
                 if (this.options.dropZone != null) {
-                    this.options.dropZone.on('dragstart', this.onDragStart);
-                    this.options.dropZone.on('dragend', this.onDragEnd);
-                    this.options.dropZone.on('dragleave', this.onDragLeave);
-                    this.options.dropZone.on('dragenter', this.onDragEnter);
-                    this.options.dropZone.on('dragover', this.onDragOver);
-                    this.options.dropZone.on('drop', this.onDrop);
+                    this.options.dropZone.on('dragstart', { instance: this }, this.onDragStart);
+                    this.options.dropZone.on('dragend',   { instance: this }, this.onDragEnd);
+                    this.options.dropZone.on('dragleave', { instance: this }, this.onDragLeave);
+                    this.options.dropZone.on('dragenter', { instance: this }, this.onDragEnter);
+                    this.options.dropZone.on('dragover',  { instance: this }, this.onDragOver);
+                    this.options.dropZone.on('drop',      { instance: this }, this.onDrop);
                 }
 
                 if (this.options.fileField != null) {
@@ -518,10 +522,10 @@ if(typeof jQuery !== undefined){
                         this.options.fileField = $(this.options.fileField);
                     }
                     this.options.dropZone.on('click', function() {
-                        othis.options.fileField.trigger('click');
+                        _this.options.fileField.trigger('click');
                     });
 
-                    this.options.fileField.on('change', this.onFilesSelected);
+                    this.options.fileField.on('change', {instance: this}, this.onFilesSelected);
                     if (this.options.hideFileField == true) {
                         this.hide(this.options.fileField);
                     }
@@ -536,9 +540,9 @@ if(typeof jQuery !== undefined){
                         if (typeof this.options.urlFieldSubmit == 'string') {
                             this.options.urlFieldSubmit = $(this.options.urlFieldSubmit);
                         }
-                        this.options.urlFieldSubmit.on('click', this.onUrlSelected);
+                        this.options.urlFieldSubmit.on('click', {instance: this}, this.onUrlSelected);
                     } else {
-                        this.options.urlField.on('change', this.onUrlSelected);
+                        this.options.urlField.on('change', {instance: this}, this.onUrlSelected);
                     }
 
                     if (this.options.hideUrlField == true) {
