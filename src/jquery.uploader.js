@@ -1,6 +1,6 @@
 /*!
  * ImageUploader (for jQuery)
- * Version 0.3.4 (26/01/2015)
+ * Version 1.0.0 (10/03/2016)
  * Copyright 2012-* Julien Deniau <julien.deniau@gmail.com>
  * Licensed under MIT (https://github.com/jdeniau/jquery-image-uploader/LICENSE.md)
  */
